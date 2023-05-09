@@ -12,85 +12,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                      Int     @id @default(autoincrement())
-  full_name               String
-  phone                   String
-  cpf                     String @unique
-  created_at              DateTime @default(now())
-  updated_at              DateTime?
-  birth                   DateTime
-  address                 Address[]
-  account                 Account[]
-}
 
-model Address {
-  id            Int   @id @default(autoincrement())
-  user          User @relation(fields: [user_id], references: [id])
-  user_id       Int
-  cep           String
-  street        String
-  number        String
-  complement    String
-  neighborhood  String
-  city          String
-  state         String
-  created_at    DateTime @default(now())
-  updated_at    DateTime?
-}
-
-model Account {
-  id                    Int   @id @default(autoincrement())
-  agency                String
-  user                  User @relation(fields: [user_id], references: [id])
-  user_id               Int
-  balance               Float
-  password              String
-  transaction_password  String
-  email                 String @unique
-  wrong_attempt         Int
-  created_at            DateTime @default(now())
-  updated_at            DateTime?
-  status                AccountStatus
-  transfer_from         Transfer[] @relation(name: "send")
-  transfer_to           Transfer[] @relation(name: "receive")
-  ticket                Ticket[]
-}
-
-model Transfer {
-  id                    Int @id @default(autoincrement())
-  account               Account @relation(name: "send", fields: [account_id], references: [id])
-  account_id            Int
-  account_receiver      Account @relation(name: "receive", fields: [account_receiver_id], references: [id])
-  account_receiver_id   Int
-  schedule_date         DateTime @default(now())
-  created_at            DateTime @default(now())
-  value                 Float 
-  status                TransferStatus
-}
-
-model Ticket{
-  id              Int @id @default(autoincrement())
-  account         Account @relation(fields: [account_id], references: [id])
-  account_id      Int
-  title           String
-  is_solved       Boolean
-  created_at      DateTime @default(now())
-  messages        Messages[]
-}
-
-model Messages{
-  id              Int @id @default(autoincrement())
-  message         String
-  ticket          Ticket @relation(fields: [ticket_id], references: [id])
-  ticket_id       Int
-  date            DateTime @default(now())
-}
-
-enum AccountStatus{
+enum AccessStatus{
   BLOCKED
   ACTIVE
   INACTIVE
+  INCOMPLETE
 }
 
 enum TransferStatus{
@@ -98,4 +25,119 @@ enum TransferStatus{
   SUCCESSFUL
   INPROGRESS
   REFOUND
+}
+
+model User_info {
+  id             String       @id @default(uuid()) @db.Uuid
+  full_name      String       @db.VarChar(200)
+  phone          String       @db.VarChar(20)
+  cpf            String       @unique @db.VarChar(15)
+  created_at     DateTime     @default(now()) @db.Timestamp()
+  updated_at     DateTime?    @db.Timestamp()
+  birth          DateTime     @db.Date
+  status         AccessStatus
+  user_auth      User_auth?
+  address        Address[]
+  account        Account[]
+  messages       Messages[]
+  ticket         Ticket[]
+}
+
+model User_auth{
+  id            String      @id @default(uuid()) @db.Uuid
+  user          User_info   @relation(fields: [user_info_id], references: [id])
+  user_info_id  String      @unique @db.Uuid
+  email         String      @db.VarChar(100) @unique
+  password      String      @db.VarChar(50)
+  created_at    DateTime    @db.Timestamp() @default(now())
+  updated_at    DateTime?   @db.Timestamp() @default(now())
+}
+
+model Address {
+  id            String      @id @default(uuid()) @db.Uuid
+  user          User_info   @relation(fields: [user_id], references: [id])
+  user_id       String      @db.Uuid
+  type          String      @db.VarChar(100)
+  cep           String      @db.VarChar(9)
+  street        String      @db.Text
+  number        String      @db.VarChar(20)
+  complement    String      @db.VarChar(200)
+  neighborhood  String      @db.VarChar(200)
+  city          String      @db.VarChar(200)
+  state         String      @db.VarChar(2)
+  created_at    DateTime    @default(now()) @db.Timestamp()
+  updated_at    DateTime?   @db.Timestamp()
+}
+
+model Account {
+  id                    String      @id @default(uuid()) @db.Uuid
+  account_number        String      @unique @db.VarChar(100)
+  agency                String      @db.VarChar(10)
+  user                  User_info   @relation(fields: [user_id], references: [id])
+  user_id               String      @db.Uuid
+  balance               Decimal     @db.Money
+  transaction_password  String      @db.VarChar(4)
+  created_at            DateTime    @default(now()) @db.Timestamp()
+  updated_at            DateTime?   @db.Timestamp()
+  status                AccessStatus
+  transfer_from         Transfer[] @relation(name: "send")
+  transfer_to           Transfer[] @relation(name: "receive")
+}
+
+model Transfer {
+  id                    String      @id @default(uuid()) @db.Uuid
+  account               Account     @relation(name: "send", fields: [account_id], references: [id])
+  account_id            String      @db.Uuid
+  account_receiver      Account     @relation(name: "receive", fields: [account_receiver_id], references: [id])
+  account_receiver_id   String      @db.Uuid
+  schedule_date         DateTime    @default(now()) @db.Timestamp()
+  created_at            DateTime    @default(now()) @db.Timestamp()
+  updated_at            DateTime?   @db.Timestamp()
+  value                 Decimal     @db.Money
+  status                TransferStatus
+}
+
+model Ticket{
+  id              String      @id @default(uuid()) @db.Uuid
+  user            User_info   @relation(fields: [user_info_id], references: [id])
+  user_info_id    String      @db.Uuid
+  title           String      @db.VarChar(50)
+  description     String      @db.Text
+  is_solved       Boolean     @db.Boolean
+  created_at      DateTime    @default(now()) @db.Timestamp()
+  updated_at      DateTime?   @db.Timestamp()
+  messages        Messages[]
+}
+
+model Messages{
+  id              String        @id @default(uuid()) @db.Uuid
+  message         String        @db.Text
+  ticket          Ticket        @relation(fields: [ticket_id], references: [id])
+  ticket_id       String        @db.Uuid
+  user            User_info     @relation(fields: [user_id], references: [id])
+  user_id         String        @db.Uuid
+  suport          Suport_info   @relation(fields: [suport_id], references: [id])
+  suport_id       String        @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamp()
+  updated_at      DateTime?     @db.Timestamp()
+}
+
+model Suport_info{
+  id          String      @id @default(uuid()) @db.Uuid
+  name        String      @db.Text
+  role        String      @db.VarChar(50)
+  created_at  DateTime    @db.Timestamp()
+  updated_at  DateTime?   @db.Timestamp()
+  messages    Messages[]
+  suport_auth Suport_auth?
+}
+
+model Suport_auth{
+  id              String @id @default(uuid()) @db.Uuid
+  suport          Suport_info @relation(fields: [suport_info_id], references: [id])
+  suport_info_id  String @unique @db.Uuid
+  email           String @db.VarChar(100)
+  password        String @db.VarChar(50)
+  created_at      DateTime @db.Timestamp()
+  updated_at      DateTime? @db.Timestamp()
 }
