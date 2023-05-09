@@ -1,16 +1,13 @@
 import { PrismaClient } from '@prisma/client';
-import { UserInfoIn } from 'dtos/UsersDTO';
+import { UserAuthIn } from 'dtos/UsersDTO';
 
 const prisma = new PrismaClient();
 
-export default class UserModel {
+export default class UserAuthModel {
 
-  create = async (user: UserInfoIn) => {
-    return await prisma.user_info.create({
-      data: {
-        ...user,
-        status: "ACTIVE"
-      }
+  create = async (user: UserAuthIn) => {
+    return await prisma.user_auth.create({
+      data: user,
     });
   }
 

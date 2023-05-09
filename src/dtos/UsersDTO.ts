@@ -1,14 +1,17 @@
-export interface UserIn {
+export interface UserInfoIn {
   full_name: string;
-  email: string;
-  password: string;
   phone: string;
   cpf: string;
-  transaction_password: string;
-  birth: Date;
+  birth?: Date;
+}
+
+export interface UserAuthIn{
+  user_info_id: string,
+  email: string,
+  password: string
 }
 
 export interface UserOut {
-  id: number;
+  id: string;
   full_name: string | null;
 }

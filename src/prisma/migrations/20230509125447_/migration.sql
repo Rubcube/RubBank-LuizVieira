@@ -12,8 +12,8 @@ CREATE TABLE "User_info" (
     "cpf" VARCHAR(15) NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP,
-    "birth" DATE NOT NULL,
-    "status" "AccessStatus" NOT NULL,
+    "birth" DATE,
+    "status" "AccessStatus",
 
     CONSTRAINT "User_info_pkey" PRIMARY KEY ("id")
 );
@@ -140,9 +140,6 @@ CREATE UNIQUE INDEX "Account_account_number_key" ON "Account"("account_number");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Suport_auth_suport_info_id_key" ON "Suport_auth"("suport_info_id");
-
--- AddForeignKey
-ALTER TABLE "User_auth" ADD CONSTRAINT "User_auth_user_info_id_fkey" FOREIGN KEY ("user_info_id") REFERENCES "User_info"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Address" ADD CONSTRAINT "Address_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User_info"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

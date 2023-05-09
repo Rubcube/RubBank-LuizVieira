@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "User_info" ALTER COLUMN "birth" SET DEFAULT CURRENT_TIMESTAMP;
