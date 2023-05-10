@@ -2,14 +2,18 @@ import { Request, Response } from "express";
 import { UserAuthIn, UserInfoIn, UserOut } from "dtos/UsersDTO";
 import UserModel from "models/UserModel";
 import UserAuthModel from "models/UserAuthModel";
+import AdressModel from "models/AdressModel";
+import { AddressIn } from "dtos/AddressDTO";
+import AccountModel from "models/AccountModel";
 
-const bcrypt = require('bcrypt');
 const userModel = new UserModel();
 const userAuthModel = new UserAuthModel();
+const adressModel = new AdressModel();
+const accountModel = new AccountModel();
 
 export default class UserController {
+
   create = async (req: Request, res: Response) => {
-    const salt = bcrypt.genSaltSync(10);
     try{
 
       const userInfo : UserInfoIn = { 
@@ -24,12 +28,27 @@ export default class UserController {
       const userAuth : UserAuthIn = {
         user_info_id: newUser.id,
         email: req.body.email,
-        password: bcrypt.hashSync(req.body.password, salt),
+        password: req.body.password,
       } 
 
-      await userAuthModel.create(userAuth);
+      const adress: AddressIn = {
+        user_id: newUser.id,
+        cep: req.body.cep,
+        type: req.body.type,
+        street: req.body.street,
+        number: req.body.number,
+        complement: req.body.complement,
+        neighborhood: req.body.neighborhood,
+        city: req.body.city,
+        state: req.body.state
+      };
 
-      res.status(201).json(newUser);
+      await userAuthModel.create(userAuth);
+      await adressModel.create(adress);
+      await accountModel.create(req.body.transaction_password, newUser.id);
+
+      
+      res.status(201).json({id: newUser.id, name: newUser.full_name});
     }catch(e){
       console.log("Failed to create user", e);
       res.status(500).send({
@@ -38,8 +57,6 @@ export default class UserController {
       });
     }
     
-
-
   };
 
   get = async (req: Request, res: Response) => {

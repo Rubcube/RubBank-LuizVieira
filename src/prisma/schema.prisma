@@ -57,7 +57,7 @@ model Address {
   user          User_info   @relation(fields: [user_id], references: [id])
   user_id       String      @db.Uuid
   type          String?     @db.VarChar(100)
-  cep           String      @db.VarChar(9)
+  cep           String      @db.VarChar(10)
   street        String      @db.Text
   number        String      @db.VarChar(20)
   complement    String?     @db.VarChar(200)
@@ -70,8 +70,8 @@ model Address {
 
 model Account {
   id                    String      @id @default(uuid()) @db.Uuid
-  account_number        Int         @unique @db.Integer @default(autoincrement())
-  agency                String      @db.VarChar(10)
+  account_number        Int         @unique @default(autoincrement())
+  agency                String      @db.VarChar(10) @default("0001")
   user                  User_info   @relation(fields: [user_id], references: [id])
   user_id               String      @db.Uuid
   balance               Decimal     @db.Money

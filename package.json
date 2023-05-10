@@ -18,13 +18,16 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "@prisma/client": "4.14",
+    "@prisma/client": "4.13",
     "bcrypt": "^5.1.0",
+    "cpf-check": "^3.0.0",
     "dotenv": "^16.0.3",
+    "email-validator": "^2.0.4",
     "express": "^4.18.1",
     "lts": "^1.2.0",
     "node": "^20.1.0",
-    "swagger-ui-express": "^4.5.0"
+    "swagger-ui-express": "^4.5.0",
+    "zod": "^3.21.4"
   },
   "prisma": {
     "schema": "src/prisma/schema.prisma"

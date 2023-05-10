@@ -12,7 +12,7 @@ CREATE TABLE "User_info" (
     "cpf" VARCHAR(15) NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP,
-    "birth" DATE,
+    "birth" DATE DEFAULT CURRENT_TIMESTAMP,
     "status" "AccessStatus",
 
     CONSTRAINT "User_info_pkey" PRIMARY KEY ("id")
@@ -23,7 +23,7 @@ CREATE TABLE "User_auth" (
     "id" UUID NOT NULL,
     "user_info_id" UUID NOT NULL,
     "email" VARCHAR(100) NOT NULL,
-    "password" VARCHAR(50) NOT NULL,
+    "password" VARCHAR(100) NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -34,11 +34,11 @@ CREATE TABLE "User_auth" (
 CREATE TABLE "Address" (
     "id" UUID NOT NULL,
     "user_id" UUID NOT NULL,
-    "type" VARCHAR(100) NOT NULL,
-    "cep" VARCHAR(9) NOT NULL,
+    "type" VARCHAR(100),
+    "cep" VARCHAR(10) NOT NULL,
     "street" TEXT NOT NULL,
     "number" VARCHAR(20) NOT NULL,
-    "complement" VARCHAR(200) NOT NULL,
+    "complement" VARCHAR(200),
     "neighborhood" VARCHAR(200) NOT NULL,
     "city" VARCHAR(200) NOT NULL,
     "state" VARCHAR(2) NOT NULL,
@@ -51,11 +51,11 @@ CREATE TABLE "Address" (
 -- CreateTable
 CREATE TABLE "Account" (
     "id" UUID NOT NULL,
-    "account_number" VARCHAR(100) NOT NULL,
-    "agency" VARCHAR(10) NOT NULL,
+    "account_number" SERIAL NOT NULL,
+    "agency" VARCHAR(10) NOT NULL DEFAULT '0001',
     "user_id" UUID NOT NULL,
     "balance" MONEY NOT NULL,
-    "transaction_password" VARCHAR(4) NOT NULL,
+    "transaction_password" VARCHAR(100) NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP,
     "status" "AccessStatus" NOT NULL,
@@ -140,6 +140,9 @@ CREATE UNIQUE INDEX "Account_account_number_key" ON "Account"("account_number");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Suport_auth_suport_info_id_key" ON "Suport_auth"("suport_info_id");
+
+-- AddForeignKey
+ALTER TABLE "User_auth" ADD CONSTRAINT "User_auth_user_info_id_fkey" FOREIGN KEY ("user_info_id") REFERENCES "User_info"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Address" ADD CONSTRAINT "Address_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User_info"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
