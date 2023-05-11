@@ -1,13 +1,18 @@
-export interface UserInfoIn {
-  full_name: string;
-  phone: string;
-  cpf: string;
-  birth?: Date;
+import { AccountIn } from './AccountDTO';
+import { AddressIn } from './AddressDTO';
+
+export interface UserInfoIn{
+  full_name: string,
+  phone: string,
+  email: string,
+  birth?: Date,
+  userAuth: UserAuthIn,
+  address: AddressIn,
+  account: AccountIn
 }
 
 export interface UserAuthIn{
-  user_info_id: string,
-  email: string,
+  cpf: string,
   password: string
 }
 

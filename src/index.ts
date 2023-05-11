@@ -12,5 +12,6 @@ app.use(express.json());
 app.get("/", (req, res) => {
   return res.send("Hello World");
 });
-app.use("/users", authentication, usersRoutes);
+app.use("/users", usersRoutes);
+
 app.listen(process.env.PORT || 3344);

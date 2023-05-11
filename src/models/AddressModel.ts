@@ -3,11 +3,11 @@ import { AddressIn } from 'dtos/AddressDTO';
 
 const prisma = new PrismaClient();
 
-export default class AdressModel {
+export default class AddressModel {
 
-  create = async (adress: AddressIn) => {
+  create = async (address: AddressIn) => {
     return await prisma.address.create({
-      data: adress
+      data: address
     });
   }
 };

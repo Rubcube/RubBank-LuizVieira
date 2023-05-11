@@ -1,15 +1,13 @@
 import { Request, Response } from "express";
+import  jwt from "jsonwebtoken";
 import { UserAuthIn, UserInfoIn, UserOut } from "dtos/UsersDTO";
 import UserModel from "models/UserModel";
 import UserAuthModel from "models/UserAuthModel";
-import AdressModel from "models/AdressModel";
-import { AddressIn } from "dtos/AddressDTO";
-import AccountModel from "models/AccountModel";
+import * as dotenv from 'dotenv'
+dotenv.config()
 
 const userModel = new UserModel();
 const userAuthModel = new UserAuthModel();
-const adressModel = new AdressModel();
-const accountModel = new AccountModel();
 
 export default class UserController {
 
@@ -19,48 +17,33 @@ export default class UserController {
       const userInfo : UserInfoIn = { 
         full_name: req.body.full_name,
         phone: req.body.phone,
-        cpf: req.body.cpf,
-        birth: new Date(req.body.birth)
+        email: req.body.email,
+        birth: new Date(req.body.birth),
+        userAuth: {
+          ...req.body.userAuth
+        },
+        address: {
+          ...req.body.adress
+        },
+        account: {
+          transaction_password: req.body.account
+        }
       };
 
       const newUser: UserOut = await userModel.create(userInfo);
 
-      const userAuth : UserAuthIn = {
-        user_info_id: newUser.id,
-        email: req.body.email,
-        password: req.body.password,
-      } 
-
-      const adress: AddressIn = {
-        user_id: newUser.id,
-        cep: req.body.cep,
-        type: req.body.type,
-        street: req.body.street,
-        number: req.body.number,
-        complement: req.body.complement,
-        neighborhood: req.body.neighborhood,
-        city: req.body.city,
-        state: req.body.state
-      };
-
-      await userAuthModel.create(userAuth);
-      await adressModel.create(adress);
-      await accountModel.create(req.body.transaction_password, newUser.id);
-
-      
       res.status(201).json({id: newUser.id, name: newUser.full_name});
     }catch(e){
+      
       console.log("Failed to create user", e);
-      res.status(500).send({
-        error: "USR-01",
-        message: "Failed to create user",
-      });
+      res.status(500).send(e);
     }
     
   };
 
   get = async (req: Request, res: Response) => {
     try {
+      
       res.status(201).json();
     } catch (e) {
       console.log("Failed to get user", e);
@@ -73,13 +56,9 @@ export default class UserController {
 
   getAll = async (req: Request, res: Response) => {
     try {
-      res.status(201).json();
+      res.status(201).json("DEU BOA");
     } catch (e) {
-      console.log("Failed to get all users", e);
-      res.status(500).send({
-        error: "USR-03",
-        message: "Failed to get all users",
-      });
+      res.status(500).send(e);
     }
   };
 
@@ -106,4 +85,35 @@ export default class UserController {
       });
     }
   };
+
+  login = async (req: Request, res:Response) =>{
+
+    try{
+
+      const user: UserAuthIn = {
+        cpf: req.body.cpf,
+        password: req.body.password
+      }
+
+      const userId = await userAuthModel.getId(user)   
+      
+      if(userId != null){
+        if(process.env.JWT_SECRET_KEY != undefined){
+          const token = jwt.sign({id: userId}, process.env.JWT_SECRET_KEY, {
+            expiresIn: 60
+          })
+          return res.json({ auth: true, token: token});
+        }
+      }
+
+      return res.status(401).send({'messsage': 'Erro de Autenticação'});
+
+    } catch (e) {
+      console.log("Failed to find user", e);
+      res.status(500).send({
+        error: "USR-05",
+        message: "Failed to find user",
+      });
+    }
+  }
 }

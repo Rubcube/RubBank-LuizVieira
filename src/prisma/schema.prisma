@@ -29,8 +29,8 @@ enum TransferStatus{
 model User_info {
   id             String       @id @default(uuid()) @db.Uuid
   full_name      String       @db.VarChar(200)
+  email         String      @db.VarChar(100) @unique
   phone          String       @db.VarChar(20)
-  cpf            String       @unique @db.VarChar(15)
   created_at     DateTime     @default(now()) @db.Timestamp()
   updated_at     DateTime?    @db.Timestamp()
   birth          DateTime?    @db.Date @default(now())
@@ -46,7 +46,7 @@ model User_auth{
   id            String      @id @default(uuid()) @db.Uuid
   user          User_info   @relation(fields: [user_info_id], references: [id])
   user_info_id  String      @unique @db.Uuid
-  email         String      @db.VarChar(100) @unique
+  cpf           String      @unique @db.VarChar(15)
   password      String      @db.VarChar(100)
   created_at    DateTime    @db.Timestamp() @default(now())
   updated_at    DateTime?   @db.Timestamp() @default(now())
