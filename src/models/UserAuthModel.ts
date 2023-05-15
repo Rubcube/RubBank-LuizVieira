@@ -19,7 +19,7 @@ export default class UserAuthModel {
   }*/
 
   getId = async (user: UserAuthIn) => {
-    const bdUser =  await prisma.user_auth.findFirst({
+    const bdUser =  await prisma.user_auth.findUnique({
       where: {
         cpf: user.cpf
       }

@@ -6,7 +6,7 @@ export interface UserInfoIn{
   phone: string,
   email: string,
   birth?: Date,
-  userAuth: UserAuthIn,
+  user_auth: UserAuthIn,
   address: AddressIn,
   account: AccountIn
 }

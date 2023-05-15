@@ -14,8 +14,8 @@ export default class UserModel {
         status: 'ACTIVE',
         user_auth:{
           create: {
-            ...user.userAuth,
-            password: bcrypt.hashSync(user.userAuth.password, salt)
+            ...user.user_auth,
+            password: bcrypt.hashSync(user.user_auth.password, salt)
           }
         },
         address:{
@@ -35,10 +35,20 @@ export default class UserModel {
     });
   }
 
-  updateStatus = async (id: string, status: AccessStatus) => {
-    return await prisma.user_info.update({
-      where: {id: id},
-      data: {status: status}
-    })
+  get = async (userId: string) => {
+
+    const userInfoId =  await prisma.user_auth.findUnique({
+      where: {id: userId},
+    });
+
+    if(userInfoId != null){
+      return await prisma.user_info.findUnique({
+        where: {
+          id: userInfoId.user_info_id
+        }
+      })
+    }
+
+    return null;
   }
 };

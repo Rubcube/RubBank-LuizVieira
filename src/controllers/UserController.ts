@@ -16,17 +16,19 @@ export default class UserController {
 
       const userInfo : UserInfoIn = { 
         full_name: req.body.full_name,
-        phone: req.body.phone,
+        phone: req.body.phone.replace(/[^\d]+/g,''),
         email: req.body.email,
         birth: new Date(req.body.birth),
-        userAuth: {
-          ...req.body.userAuth
+        user_auth: {
+          ...req.body.user_auth,
+          cpf: req.body.user_auth.cpf.replace(/[^\d]+/g,'')
         },
         address: {
-          ...req.body.adress
+          ...req.body.address,
+          cep: req.body.address.cep.replace(/[^\d]+/g,'')
         },
         account: {
-          transaction_password: req.body.account
+          transaction_password: req.body.account.transaction_password
         }
       };
 
@@ -35,8 +37,7 @@ export default class UserController {
       res.status(201).json({id: newUser.id, name: newUser.full_name});
     }catch(e){
       
-      console.log("Failed to create user", e);
-      res.status(500).send(e);
+      res.status(500).json({code: "user_not_created", message: "Failed to create a user"});
     }
     
   };
@@ -54,11 +55,13 @@ export default class UserController {
     }
   };
 
-  getAll = async (req: Request, res: Response) => {
+  getByToken = async (req: Request, res: Response) => {
+
     try {
-      res.status(201).json("DEU BOA");
+      const user = await userModel.get(req.body.id);
+      res.status(200).json(user);
     } catch (e) {
-      res.status(500).send(e);
+      res.status(500).json({code: "user_not_find",message: "Failed to find user"});
     }
   };
 
@@ -100,13 +103,13 @@ export default class UserController {
       if(userId != null){
         if(process.env.JWT_SECRET_KEY != undefined){
           const token = jwt.sign({id: userId}, process.env.JWT_SECRET_KEY, {
-            expiresIn: 60
+            expiresIn: 30
           })
           return res.json({ auth: true, token: token});
         }
       }
 
-      return res.status(401).send({'messsage': 'Erro de Autenticação'});
+      return res.status(401).json({code: 'bad_credentials', messsage: 'credentials must be valid'});
 
     } catch (e) {
       console.log("Failed to find user", e);

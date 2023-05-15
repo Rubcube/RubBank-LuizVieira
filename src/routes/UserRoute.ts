@@ -6,12 +6,11 @@ import { authentication } from 'middlewares/auth';
 const routes = Router();
 const userController = new UserController();
 
-routes.post('/', OnboardingValidation, userController.create);
 routes.post('/login', userController.login);
+routes.post('/', OnboardingValidation, userController.create);
+routes.get('/', authentication, userController.getByToken);
 
-routes.get('/', authentication, userController.getAll);
-/*routes.get('/:id', userController.get);
-routes.put('/:id', userController.update);
+/*routes.put('/:id', userController.update);
 routes.delete('/:id', userController.delete);*/
 
 export default routes;
