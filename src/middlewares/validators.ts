@@ -1,19 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
-import { emailRegex, fullNameRegex, passwordRegex, phoneRegex, transactionPasswordRegex } from 'utils/regex';
+import { fieldErrors } from 'utils/FieldErrors';
+import { emailRegex, fullNameRegex, passwordRegex, phoneRegex, replaceRegex, transactionPasswordRegex } from 'utils/regex';
 import { z } from 'zod';
 
 export const OnboardingValidation = (req: Request, res:Response, next: NextFunction) => {
-
+  z.setErrorMap(fieldErrors);
   const UserIn = z.object({
-    full_name: z.string().trim().regex(fullNameRegex, "Invalid full name"),
-    phone: z.string().trim().min(11).regex(phoneRegex, 'Invalid phone'),
+    full_name: z.string().trim().regex(fullNameRegex),
+    phone: z.string().trim().min(11).regex(phoneRegex),
     birth: z.string().trim().datetime({precision: 3}).nullish(),
-    email: z.string().trim().regex(emailRegex, 'Invalid email'),
+    email: z.string().trim().regex(emailRegex),
 
     user_auth: z.object({
-      cpf: z.string().min(11).transform((value) => value.replace(/[^\d]+/g,''))
-            .refine((value) => cpfValidator(value), {message:'Invalid CPF'}),
-      password: z.string().trim().regex(passwordRegex, 'Invalid password')
+      cpf: z.string().min(11).transform((value) => value.replace(replaceRegex ,''))
+            .refine((value) => cpfValidator(value)),
+      password: z.string().trim().regex(passwordRegex)
     }),
     
     address: z.object({
@@ -27,14 +28,13 @@ export const OnboardingValidation = (req: Request, res:Response, next: NextFunct
     }),
 
     account: z.object({
-      transaction_password: z.string().trim().regex(transactionPasswordRegex, {message: "transaction password must only contain numbers"}).length(4)
+      transaction_password: z.string().trim().regex(transactionPasswordRegex).length(4)
     })
   }) .safeParse(req.body);
   
   if(!UserIn.success){
-    return res.status(400).send(UserIn.error.issues);
+    return res.status(400).send(UserIn.error.format());
   }
-  
 
   next();
 }

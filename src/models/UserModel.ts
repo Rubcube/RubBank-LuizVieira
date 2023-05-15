@@ -37,18 +37,18 @@ export default class UserModel {
 
   get = async (userId: string) => {
 
-    const userInfoId =  await prisma.user_auth.findUnique({
-      where: {id: userId},
+    return await prisma.user_info.findFirst({
+      where: {
+        user_auth:{
+          id: userId
+        }
+      },
+      include:{
+        account: true,
+        address: true,
+        user_auth: true
+      }
     });
 
-    if(userInfoId != null){
-      return await prisma.user_info.findUnique({
-        where: {
-          id: userInfoId.user_info_id
-        }
-      })
-    }
-
-    return null;
   }
 };

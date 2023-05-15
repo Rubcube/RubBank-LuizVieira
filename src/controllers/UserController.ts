@@ -4,6 +4,7 @@ import { UserAuthIn, UserInfoIn, UserOut } from "dtos/UsersDTO";
 import UserModel from "models/UserModel";
 import UserAuthModel from "models/UserAuthModel";
 import * as dotenv from 'dotenv'
+import { replaceRegex } from "utils/regex";
 dotenv.config()
 
 const userModel = new UserModel();
@@ -16,16 +17,16 @@ export default class UserController {
 
       const userInfo : UserInfoIn = { 
         full_name: req.body.full_name,
-        phone: req.body.phone.replace(/[^\d]+/g,''),
+        phone: req.body.phone.replace(replaceRegex,''),
         email: req.body.email,
         birth: new Date(req.body.birth),
         user_auth: {
           ...req.body.user_auth,
-          cpf: req.body.user_auth.cpf.replace(/[^\d]+/g,'')
+          cpf: req.body.user_auth.cpf.replace(replaceRegex,'')
         },
         address: {
           ...req.body.address,
-          cep: req.body.address.cep.replace(/[^\d]+/g,'')
+          cep: req.body.address.cep.replace(replaceRegex,'')
         },
         account: {
           transaction_password: req.body.account.transaction_password
@@ -42,19 +43,6 @@ export default class UserController {
     
   };
 
-  get = async (req: Request, res: Response) => {
-    try {
-      
-      res.status(201).json();
-    } catch (e) {
-      console.log("Failed to get user", e);
-      res.status(500).send({
-        error: "USR-02",
-        message: "Failed to get user",
-      });
-    }
-  };
-
   getByToken = async (req: Request, res: Response) => {
 
     try {
@@ -62,30 +50,6 @@ export default class UserController {
       res.status(200).json(user);
     } catch (e) {
       res.status(500).json({code: "user_not_find",message: "Failed to find user"});
-    }
-  };
-
-  update = async (req: Request, res: Response) => {
-    try {
-      
-    } catch (e) {
-      console.log("Failed to update user", e);
-      res.status(500).send({
-        error: "USR-04",
-        message: "Failed to update user",
-      });
-    }
-  };
-
-  delete = async (req: Request, res: Response) => {
-    try {
-      
-    } catch (e) {
-      console.log("Failed to delete user", e);
-      res.status(500).send({
-        error: "USR-05",
-        message: "Failed to delete user",
-      });
     }
   };
 
