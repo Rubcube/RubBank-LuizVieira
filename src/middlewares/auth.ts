@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from "jsonwebtoken";
+import { InternalErrors } from 'utils/ErrorsType';
 
 export const authentication = (req: Request, res:Response, next: NextFunction) => {
 
@@ -12,6 +13,6 @@ export const authentication = (req: Request, res:Response, next: NextFunction) =
       next();
     });
   }
-  else return res.status(401).json({ code: 'token_error',auth: false, message: 'No token provided.' });
+  else return res.status(401).json(InternalErrors.TOKEN_ERROR);
 
 }

@@ -5,6 +5,7 @@ import UserModel from "models/UserModel";
 import UserAuthModel from "models/UserAuthModel";
 import * as dotenv from 'dotenv'
 import { replaceRegex } from "utils/regex";
+import { InternalErrors } from "utils/ErrorsType";
 dotenv.config()
 
 const userModel = new UserModel();
@@ -38,7 +39,7 @@ export default class UserController {
       res.status(201).json({id: newUser.id, name: newUser.full_name});
     }catch(e){
       
-      res.status(500).json({code: "user_not_created", message: "Failed to create a user"});
+      res.status(500).json(InternalErrors.ONBOARDING_FAILED);
     }
     
   };
@@ -49,7 +50,7 @@ export default class UserController {
       const user = await userModel.get(req.body.id);
       res.status(200).json(user);
     } catch (e) {
-      res.status(500).json({code: "user_not_find",message: "Failed to find user"});
+      res.status(404).json(InternalErrors.USER_NOT_FIND);
     }
   };
 
@@ -73,14 +74,10 @@ export default class UserController {
         }
       }
 
-      return res.status(401).json({code: 'bad_credentials', messsage: 'credentials must be valid'});
+      return res.status(401).json(InternalErrors.BAD_CREDENTIALS);
 
     } catch (e) {
-      console.log("Failed to find user", e);
-      res.status(500).send({
-        error: "USR-05",
-        message: "Failed to find user",
-      });
+      res.status(404).json(InternalErrors.USER_NOT_FIND);
     }
   }
 }
