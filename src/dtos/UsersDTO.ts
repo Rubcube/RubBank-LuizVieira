@@ -11,6 +11,10 @@ export interface UserInfoIn{
   account: AccountIn
 }
 
+export interface UserInfoOut{
+  
+}
+
 export interface UserAuthIn{
   cpf: string,
   password: string

@@ -10,7 +10,4 @@ routes.post('/login', userController.login);
 routes.post('/', OnboardingValidation, userController.create);
 routes.get('/', authentication, userController.getByToken);
 
-/*routes.put('/:id', userController.update);
-routes.delete('/:id', userController.delete);*/
-
 export default routes;

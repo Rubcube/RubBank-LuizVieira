@@ -14,7 +14,7 @@ export default class UserAuthModel {
       }
     });
     if(bdUser != null){
-      return await bcrypt.compare(user.password, bdUser.password) == true ? bdUser?.id : null;
+      return await bcrypt.compare(user.password, bdUser.password) == true ? bdUser?.user_info_id : null;
     }
     return null;
 

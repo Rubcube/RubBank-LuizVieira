@@ -6,10 +6,12 @@ import UserAuthModel from "models/UserAuthModel";
 import * as dotenv from 'dotenv'
 import { replaceRegex } from "utils/regex";
 import { InternalErrors } from "utils/ErrorsType";
+import AccountModel from "models/AccountModel";
 dotenv.config()
 
 const userModel = new UserModel();
 const userAuthModel = new UserAuthModel();
+const accountModel = new AccountModel();
 
 export default class UserController {
 
@@ -45,12 +47,11 @@ export default class UserController {
   };
 
   getByToken = async (req: Request, res: Response) => {
-
     try {
       const user = await userModel.get(req.body.id);
       res.status(200).json(user);
     } catch (e) {
-      res.status(404).json(InternalErrors.USER_NOT_FIND);
+      res.status(404).json(InternalErrors.USER_NOT_FOUND);
     }
   };
 
@@ -68,7 +69,7 @@ export default class UserController {
       if(userId != null){
         if(process.env.JWT_SECRET_KEY != undefined){
           const token = jwt.sign({id: userId}, process.env.JWT_SECRET_KEY, {
-            expiresIn: 30
+            expiresIn: 300
           })
           return res.json({ auth: true, token: token});
         }
@@ -77,7 +78,7 @@ export default class UserController {
       return res.status(401).json(InternalErrors.BAD_CREDENTIALS);
 
     } catch (e) {
-      res.status(404).json(InternalErrors.USER_NOT_FIND);
+      res.status(404).json(InternalErrors.USER_NOT_FOUND);
     }
   }
 }

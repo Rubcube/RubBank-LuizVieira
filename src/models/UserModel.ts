@@ -1,4 +1,4 @@
-import { AccessStatus, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { UserInfoIn } from 'dtos/UsersDTO';
 const bcrypt = require('bcrypt');
 
@@ -51,4 +51,5 @@ export default class UserModel {
     });
 
   }
+
 };

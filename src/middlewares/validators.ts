@@ -47,7 +47,6 @@ export const OnboardingValidation = (req: Request, res:Response, next: NextFunct
   if(!UserIn.success){
     return res.status(400).send(UserIn.error.issues);
   }
-
   next();
 }
 
@@ -81,4 +80,8 @@ export const cpfValidator = (cpf: string) => {
 	if (resto != parseInt(cpf.charAt(10)))return false;		
 
 	return true;   
+}
+
+export const transactionValidation = (req: Request, res: Response, next: NextFunction) => {
+
 }
