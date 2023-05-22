@@ -1,11 +1,14 @@
 import { Router } from 'express';
 import { authentication } from 'middlewares/auth';
 import AccountController from 'controllers/AccountController';
+import { FiltersValidation, TransferValidation } from 'middlewares/validators';
 const accountController = new AccountController();
 
 const routes = Router();
 
-routes.get('/:accountId/balance/', authentication, accountController.getBalance);
-routes.post('/transfer', authentication, accountController.createTransfer);
+routes.post('/transfer/', authentication, TransferValidation, accountController.createTransfer);
+routes.get('/balance/:accountId', authentication, accountController.getBalance);
+routes.get('/transfer/', authentication, accountController.getDetailedTransfer);
+routes.get('/transfer/extrato/', authentication, FiltersValidation, accountController.getExtrato);
 
 export default routes;

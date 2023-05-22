@@ -60,7 +60,7 @@ export default class UserController {
     try{
 
       const user: UserAuthIn = {
-        cpf: req.body.cpf,
+        cpf: req.body.cpf.replace(replaceRegex,''),
         password: req.body.password
       }
 
@@ -69,7 +69,7 @@ export default class UserController {
       if(userId != null){
         if(process.env.JWT_SECRET_KEY != undefined){
           const token = jwt.sign({id: userId}, process.env.JWT_SECRET_KEY, {
-            expiresIn: 300
+            expiresIn: 6000
           })
           return res.json({ auth: true, token: token});
         }

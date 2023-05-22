@@ -8,10 +8,10 @@ CREATE TYPE "TransferStatus" AS ENUM ('CANCELED', 'SUCCESSFUL', 'INPROGRESS', 'R
 CREATE TABLE "User_info" (
     "id" UUID NOT NULL,
     "full_name" VARCHAR(200) NOT NULL,
+    "email" VARCHAR(100) NOT NULL,
     "phone" VARCHAR(20) NOT NULL,
-    "cpf" VARCHAR(15) NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP,
+    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "birth" DATE DEFAULT CURRENT_TIMESTAMP,
     "status" "AccessStatus",
 
@@ -22,8 +22,9 @@ CREATE TABLE "User_info" (
 CREATE TABLE "User_auth" (
     "id" UUID NOT NULL,
     "user_info_id" UUID NOT NULL,
-    "email" VARCHAR(100) NOT NULL,
+    "cpf" VARCHAR(15) NOT NULL,
     "password" VARCHAR(100) NOT NULL,
+    "wrong_pass" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -43,7 +44,7 @@ CREATE TABLE "Address" (
     "city" VARCHAR(200) NOT NULL,
     "state" VARCHAR(2) NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP,
+    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Address_pkey" PRIMARY KEY ("id")
 );
@@ -56,8 +57,10 @@ CREATE TABLE "Account" (
     "user_id" UUID NOT NULL,
     "balance" MONEY NOT NULL,
     "transaction_password" VARCHAR(100) NOT NULL,
+    "wrong_pass" INTEGER NOT NULL DEFAULT 0,
+    "tag" TEXT,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP,
+    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "status" "AccessStatus" NOT NULL,
 
     CONSTRAINT "Account_pkey" PRIMARY KEY ("id")
@@ -68,9 +71,10 @@ CREATE TABLE "Transfer" (
     "id" UUID NOT NULL,
     "account_id" UUID NOT NULL,
     "account_receiver_id" UUID NOT NULL,
+    "description" TEXT,
     "schedule_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP,
+    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "value" MONEY NOT NULL,
     "status" "TransferStatus" NOT NULL,
 
@@ -85,7 +89,7 @@ CREATE TABLE "Ticket" (
     "description" TEXT NOT NULL,
     "is_solved" BOOLEAN NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP,
+    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Ticket_pkey" PRIMARY KEY ("id")
 );
@@ -98,7 +102,7 @@ CREATE TABLE "Messages" (
     "user_id" UUID NOT NULL,
     "suport_id" UUID NOT NULL,
     "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP,
+    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Messages_pkey" PRIMARY KEY ("id")
 );
@@ -108,8 +112,8 @@ CREATE TABLE "Suport_info" (
     "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "role" VARCHAR(50) NOT NULL,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Suport_info_pkey" PRIMARY KEY ("id")
 );
@@ -120,20 +124,20 @@ CREATE TABLE "Suport_auth" (
     "suport_info_id" UUID NOT NULL,
     "email" VARCHAR(100) NOT NULL,
     "password" VARCHAR(50) NOT NULL,
-    "created_at" TIMESTAMP NOT NULL,
-    "updated_at" TIMESTAMP,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Suport_auth_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_info_cpf_key" ON "User_info"("cpf");
+CREATE UNIQUE INDEX "User_info_email_key" ON "User_info"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_auth_user_info_id_key" ON "User_auth"("user_info_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_auth_email_key" ON "User_auth"("email");
+CREATE UNIQUE INDEX "User_auth_cpf_key" ON "User_auth"("cpf");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Account_account_number_key" ON "Account"("account_number");

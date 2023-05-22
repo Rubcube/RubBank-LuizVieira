@@ -1,13 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
+import { DateTime } from 'luxon';
 import { ErrorsMessage } from 'utils/ErrorsType';
 import { emailRegex, fullNameRegex, passwordRegex, phoneRegex, replaceRegex, transactionPasswordRegex } from 'utils/regex';
 import { z } from 'zod';
 
 export const OnboardingValidation = (req: Request, res:Response, next: NextFunction) => {
+  if(req.body.birth) req.body.birth = DateTime.fromISO(req.body.birth).toJSDate();
   const UserIn = z.object({
     full_name: z.string().trim().regex(fullNameRegex, ErrorsMessage.invalid_string.default),
     phone: z.string().trim().min(11, {message: ErrorsMessage.invalid_length.phone}).regex(phoneRegex),
-    birth: z.string().trim().datetime({precision: 3}).nullish(),
+    birth: z.date().nullish(),
     email: z.string().trim().regex(emailRegex, ErrorsMessage.invalid_string.default),
 
     user_auth: z.object({
@@ -50,6 +52,70 @@ export const OnboardingValidation = (req: Request, res:Response, next: NextFunct
   next();
 }
 
+export const TransferValidation = (req: Request, res: Response, next: NextFunction) => {
+  req.body.scheduleTo = DateTime.fromISO(req.body.scheduleTo).toJSDate();
+  const TransferIn = z.object({
+    accountId: z.string().trim().uuid(),
+    scheduleTo: z.date(),
+    value: z.number().min(0.05, ErrorsMessage.invalid_length.value),
+    transaction_password: z.string().trim().regex(transactionPasswordRegex, ErrorsMessage.invalid_string.transaction_password),
+    receiver: z.object({
+      agency: z.string().trim().length(4, ErrorsMessage.default),
+      accountNumber: z.number().min(1, ErrorsMessage.default)
+    })
+  }).safeParse(req.body, {
+    errorMap: (issue, _ctx) => {
+      if(issue.message){return {message: issue.message}};
+      switch(issue.code){
+        case 'invalid_string': return {message: ErrorsMessage.invalid_string.default};
+        case 'invalid_type': return {message: ErrorsMessage.invalid_type};
+        default: return {message: ErrorsMessage.default};
+      }
+    }
+  });
+
+  if(!TransferIn.success){
+    return res.status(400).send(TransferIn.error.issues);
+  }
+  next();
+}
+
+export const FiltersValidation = (req: Request, res: Response, next: NextFunction) => {
+  let startDate = null;
+  let endDate = null;
+
+  if(req.query.startDate) { startDate = DateTime.fromISO(req.query.startDate as string).toJSDate(); }
+  if(req.query.endDate) { endDate = DateTime.fromISO(req.query.endDate as string).toJSDate(); }
+
+  const params = z.object({
+    accountId: z.string().trim().uuid(),
+    startDate: z.date().nullish(),
+    endDate: z.date().nullish(),
+    schedule: z.string().nullish(),
+    type: z.string().nullish()
+  })
+    .safeParse({
+      accountId: req.query.accountId,
+      startDate: startDate,
+      endDate: endDate,
+      schedule: req.query.schedule,
+      type: req.query.type
+    }, {
+      errorMap: (issue, _ctx) => {
+        if(issue.message){return {message: issue.message}};
+        switch(issue.code){
+          case 'invalid_string': return {message: ErrorsMessage.invalid_string.default};
+          case 'invalid_type': return {message: ErrorsMessage.invalid_type};
+          default: return {message: ErrorsMessage.default};
+        }
+      }
+    });
+    if(!params.success) return res.status(400).send(params.error.issues);
+    
+  res.locals.params = params;
+  next();
+}
+
 export const cpfValidator = (cpf: string) => {
 	if(cpf == '') return false;	
 	if (cpf.length != 11 || 
@@ -80,8 +146,4 @@ export const cpfValidator = (cpf: string) => {
 	if (resto != parseInt(cpf.charAt(10)))return false;		
 
 	return true;   
-}
-
-export const transactionValidation = (req: Request, res: Response, next: NextFunction) => {
-
 }

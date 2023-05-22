@@ -92,6 +92,7 @@ model Transfer {
   account_id            String      @db.Uuid
   account_receiver      Account     @relation(name: "receive", fields: [account_receiver_id], references: [id])
   account_receiver_id   String      @db.Uuid
+  description           String?     @db.Text
   schedule_date         DateTime    @default(now()) @db.Timestamp()
   created_at            DateTime    @default(now()) @db.Timestamp()
   updated_at            DateTime?   @db.Timestamp() @default(now())

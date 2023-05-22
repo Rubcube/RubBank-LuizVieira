@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, TransferStatus } from "@prisma/client";
 import { DateTime } from "luxon";
 import { UserInfoOut } from "./UsersDTO";
 
@@ -8,13 +8,37 @@ export interface TransferIn{
     scheduleTo: DateTime,
     value: Prisma.Decimal,
     originBalance: Prisma.Decimal,
-    receiverBalance: Prisma.Decimal
+    receiverBalance: Prisma.Decimal,
+    status: TransferStatus
 }
 
-export interface TransferOut{
+interface accountData{
+    agency: string,
+    account_number: number,
+    full_name: string,
+    cpf : string | undefined
+}
+
+export interface transferOut{
     id: string,
-    userOrigin: UserInfoOut,
     value: Prisma.Decimal,
-    createdAt: DateTime,
-    scheduleTo: DateTime,
+    created_at: DateTime,
+    schedule_date: DateTime,
+    status: TransferStatus,
+    account: accountData,
+    account_receiver: accountData,
+}
+
+export interface transfers{
+    id: string,
+    schedule_date: Date,
+    value: Prisma.Decimal,
+    type: string,
+}
+
+export type resExtrato = {
+    pages: number,
+    actualPage: number,
+    maxPerPage: number,
+    transfers?: Array<transfers>
 }

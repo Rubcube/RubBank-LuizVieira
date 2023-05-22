@@ -1,5 +1,5 @@
 export interface AddressIn {
-  user_id?: string;
+  user_id: string;
   cep: string;
   type: string | "";
   street: string;
