@@ -52,4 +52,16 @@ export default class UserModel {
 
   }
 
+  getAccounts = async(userId: string) => {
+    return await prisma.account.findMany({
+      where: {
+        user_id: userId
+      },
+      select: {
+        id: true,
+        agency: true,
+        account_number: true
+      }
+    });
+  }
 };

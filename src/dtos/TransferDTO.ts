@@ -27,6 +27,7 @@ export interface transferOut{
     status: TransferStatus,
     account: accountData,
     account_receiver: accountData,
+    type: string
 }
 
 export interface transfers{
@@ -34,11 +35,16 @@ export interface transfers{
     schedule_date: Date,
     value: Prisma.Decimal,
     type: string,
+    status: TransferStatus
 }
 
-export type resExtrato = {
+interface pagination {
     pages: number,
     actualPage: number,
     maxPerPage: number,
+}
+
+export type resExtrato = {
+    pagination: pagination
     transfers?: Array<transfers>
 }

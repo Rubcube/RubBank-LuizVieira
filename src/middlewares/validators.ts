@@ -47,7 +47,7 @@ export const OnboardingValidation = (req: Request, res:Response, next: NextFunct
   });
   
   if(!UserIn.success){
-    return res.status(400).send(UserIn.error.issues);
+    return res.status(400).send({error: UserIn.error.issues});
   }
   next();
 }
@@ -56,13 +56,10 @@ export const TransferValidation = (req: Request, res: Response, next: NextFuncti
   req.body.scheduleTo = DateTime.fromISO(req.body.scheduleTo).toJSDate();
   const TransferIn = z.object({
     accountId: z.string().trim().uuid(),
+    accountReceiverId: z.string().trim().uuid(),
     scheduleTo: z.date(),
     value: z.number().min(0.05, ErrorsMessage.invalid_length.value),
     transaction_password: z.string().trim().regex(transactionPasswordRegex, ErrorsMessage.invalid_string.transaction_password),
-    receiver: z.object({
-      agency: z.string().trim().length(4, ErrorsMessage.default),
-      accountNumber: z.number().min(1, ErrorsMessage.default)
-    })
   }).safeParse(req.body, {
     errorMap: (issue, _ctx) => {
       if(issue.message){return {message: issue.message}};
@@ -75,7 +72,7 @@ export const TransferValidation = (req: Request, res: Response, next: NextFuncti
   });
 
   if(!TransferIn.success){
-    return res.status(400).send(TransferIn.error.issues);
+    return res.status(400).send({error: TransferIn.error.issues});
   }
   next();
 }
@@ -110,7 +107,31 @@ export const FiltersValidation = (req: Request, res: Response, next: NextFunctio
         }
       }
     });
-    if(!params.success) return res.status(400).send(params.error.issues);
+    if(!params.success) return res.status(400).send({error: params.error.issues});
+    
+  res.locals.params = params;
+  next();
+}
+
+export const GetAccountParamsValidation = (req: Request, res: Response, next: NextFunction) => {
+  const params = z.object({
+    agency: z.string().trim().length(4, ErrorsMessage.default),
+    account: z.string().trim()
+  })
+    .safeParse({
+      agency: req.query.agency,
+      account: req.query.account,
+    }, {
+      errorMap: (issue, _ctx) => {
+        if(issue.message){return {message: issue.message}};
+        switch(issue.code){
+          case 'invalid_string': return {message: ErrorsMessage.invalid_string.default};
+          case 'invalid_type': return {message: ErrorsMessage.invalid_type};
+          default: return {message: ErrorsMessage.default};
+        }
+      }
+    });
+    if(!params.success) return res.status(400).send({error: params.error.issues});
     
   res.locals.params = params;
   next();

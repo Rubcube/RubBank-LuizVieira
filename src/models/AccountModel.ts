@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, TransferStatus } from '@prisma/client';
+import { PrismaClient,  TransferStatus, Transfer } from '@prisma/client';
 import { TransferIn } from 'dtos/TransferDTO';
 import { DateTime } from 'luxon';
 import CustomError from 'utils/ErrorsType';
@@ -27,6 +27,26 @@ export default class AccountModel {
         status: "ACTIVE"
       }
     });
+  }
+
+  getAccount = async (agency: string, accountNumber: number) => {
+    return await prisma.account.findFirst({
+      where:{
+        account_number: accountNumber,
+        AND:{
+          agency: agency
+        }, 
+      },
+      include:{
+        user: {select:{
+          full_name: true,
+          user_auth: {select:{
+            cpf: true
+          }}
+        }}
+        
+      }
+    })
   }
 
   createTransaction = async (transfer: TransferIn) => {
@@ -80,22 +100,12 @@ export default class AccountModel {
       where: {
         id: accountId, 
         AND: {
-          user_id: userId
+          user_id: userId,
+          status: "ACTIVE"
         }
       },
       select: { balance: true }
     })
-  }
-
-  getAccount = async (agency: string, accountNumber: number) => {
-      return await prisma.account.findFirst({
-        where:{
-          account_number: accountNumber,
-          AND:{
-            agency: agency
-          }, 
-        }
-      })
   }
 
   getAccountById = async (id: string) => {
@@ -159,69 +169,80 @@ export default class AccountModel {
 
   getTransfers = async (accountId: string, page: number, params?: filters) => {
     let status : TransferStatus;
+    let pages: number = 0;
+    let result: Array<Transfer> = [];
+
+    if((!!params?.endDate && !!params?.startDate) && (params?.endDate < params?.startDate)) throw new CustomError(InternalErrors.INVALID_DATE);
 
     if(params?.schedule === "true") status = "INPROGRESS";
     else status = "SUCCESSFUL";
 
-    const result = await prisma.transfer.findMany({
-      skip: (page - 1) * 10,
-      take: 10,
-      where: {
-        OR: 
-        params?.type === "in"? [
-          {account_receiver_id: accountId}
-        ] : 
-        params?.type === "out"? [
-          {account_id: accountId}
-        ] :
-        [
-          {account_id: accountId},
-          {account_receiver_id: accountId}
-        ],
-        AND: params?[
-          { 
-            schedule_date:{
-              gte: params.startDate? params.startDate: undefined,
-              lte: params.endDate? params.endDate: undefined
-            }
-          },
-          {
-            status: status
-          }
-        ]: undefined,
-      },
-      orderBy: {
-        created_at: 'desc'
-      }
-    });
+    await prisma.$transaction(async (prisma) => {
 
-    const pages = await prisma.transfer.count({
-      where: {
-        OR: 
-        params?.type === "in"? [
-          {account_receiver_id: accountId}
-        ] : 
-        params?.type === "out"? [
-          {account_id: accountId}
-        ] :
-        [
-          {account_id: accountId},
-          {account_receiver_id: accountId}
-        ],
-        AND: params?[
-          { 
-            schedule_date:{
-              gte: params.startDate? params.startDate: undefined,
-              lte: params.endDate? params.endDate: undefined
+      result = await prisma.transfer.findMany({
+        orderBy: {
+          created_at: 'desc'
+        },
+        where: {
+          OR: 
+          params?.type === "in"? [
+            {account_receiver_id: accountId}
+          ] : 
+          params?.type === "out"? [
+            {account_id: accountId}
+          ] :
+          [
+            {account_id: accountId},
+            status === "SUCCESSFUL"?{account_receiver_id: accountId}: {account_receiver_id: undefined}
+          ],
+          AND: params?[
+            { 
+              schedule_date:{
+                gte: params.startDate? params.startDate: DateTime.now().minus({days: 7}).toJSDate(),
+                lte: params.endDate? params.endDate: DateTime.now().plus({days: 7}).toJSDate()
+              }
+            },
+            {
+              status: status
             }
-          },
-          {
-            status: status
-          }
-        ]: undefined,
-      },
+          ]: undefined,
+        },
+        skip: (page - 1) * 10,
+        take: 10,
+      });
+  
+      pages = await prisma.transfer.count({
+        where: {
+          OR: 
+          params?.type === "in"? [
+            {account_receiver_id: accountId}
+          ] : 
+          params?.type === "out"? [
+            {account_id: accountId}
+          ] :
+          [
+            {account_id: accountId},
+            {account_receiver_id: accountId}
+          ],
+          AND: params?[
+            { 
+              schedule_date:{
+                gte: params.startDate? params.startDate: undefined,
+                lte: params.endDate? params.endDate: undefined
+              }
+            },
+            {
+              status: status
+            }
+          ]: undefined,
+        },
+      })
+
     })
+    
 
     return {result: result, pages: pages}
   }
+
+
 };

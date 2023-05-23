@@ -8,9 +8,30 @@ const bcrypt = require('bcrypt');
 const accountModel = new AccountModel()
 
 export default class AccountController{
+
+    getAccount = async (req: Request, res: Response) => {
+      try{
+        const account = await accountModel.getAccount(res.locals.params.data.agency, parseInt(res.locals.params.data.account));
+        return res.status(200).json({
+          account: {
+            id: account?.id,
+            agency: account?.agency,
+            account_number: account?.account_number,
+            user:{
+              full_name: account?.user.full_name,
+              cpf: account?.user.user_auth?.cpf
+            }
+          }
+        }); 
+      }catch(err:any){
+        console.error(err);
+        return res.status(500).json({error: [err.error]})
+      }
+    }
+
     createTransfer = async (req: Request, res: Response) => {
         try{
-          const accountReceiver: Account | null = await accountModel.getAccount(req.body.receiver.agency, req.body.receiver.accountNumber);
+          const accountReceiver: Account | null = await accountModel.getAccountById(req.body.accountReceiverId);
           const accountOrigin: Account | null  = await accountModel.getAccountById(req.body.accountId);
 
           if(accountOrigin === null || accountReceiver === null || accountReceiver.status !== "ACTIVE")
@@ -51,7 +72,7 @@ export default class AccountController{
 
         }catch(err: any){
           console.error(err);
-          return res.status(400).json([err.error]);
+          return res.status(400).json({error:[err.error]});
         }
         
     }
@@ -69,7 +90,7 @@ export default class AccountController{
             throw new CustomError(InternalErrors.PARAMS_NOT_DEFINED);
           }
         } catch (err: any) {
-          return res.status(400).json([err.error]);
+          return res.status(400).json({error:[err.error]});
         }
     }
 
@@ -81,14 +102,19 @@ export default class AccountController{
 
           if(result){
 
-            if(result?.account.user_id !== res.locals.token.id) throw new CustomError(InternalErrors.ACCESS_DENIED);
+            if(result?.account.user_id !== res.locals.token.id && result?.account_receiver.user_id !== res.locals.token.id)
+              throw new CustomError(InternalErrors.ACCESS_DENIED);
 
+            if(result?.account_receiver.user_id === res.locals.token.id && result.status === "INPROGRESS") 
+              throw new CustomError(InternalErrors.ACCESS_DENIED);
+              
             const detailedTransfer: transferOut = {
               id: result.id,
               value: result.value,
               created_at: DateTime.fromJSDate(result.created_at),
               schedule_date: DateTime.fromJSDate(result.schedule_date),
               status: result.status,
+              type: result.account.user_id === res.locals.token.id? "out": "in",
               account: {
                 agency: result.account.agency,
                 account_number: result.account.account_number,
@@ -102,7 +128,7 @@ export default class AccountController{
                 cpf: result.account_receiver.user.user_auth?.cpf,
               },
             }
-            return res.status(200).json(detailedTransfer);
+            return res.status(200).json({transfer: detailedTransfer});
           }
           throw new CustomError(InternalErrors.TRANSACTION_NOT_FOUND);
 
@@ -111,7 +137,7 @@ export default class AccountController{
 
       }catch(err: any){
         console.error(err);
-        return res.status(400).json(err);
+        return res.status(400).json({error:[err.error]});
       }
     }
 
@@ -133,21 +159,24 @@ export default class AccountController{
             id: transaction.id,
             schedule_date: transaction.schedule_date,
             value: transaction.value,
+            status: transaction.status,
             type: transaction.account_id === req.query.accountId? "out" : "in"
           })
         })
 
         let extrato: resExtrato = {
-          pages: Math.ceil(result.pages / 10),
-          actualPage: page,
-          maxPerPage: 10,
+          pagination: {
+            pages: Math.ceil(result.pages / 10),
+            actualPage: page,
+            maxPerPage: 10,
+          },
           transfers: transfers
         };
         
         return res.status(200).json(extrato);
       }catch(err: any){
         console.error(err);
-        return res.status(500).json(err)
+        return res.status(500).json({error:[err.error]})
       }
       
     }

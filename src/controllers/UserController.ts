@@ -41,7 +41,7 @@ export default class UserController {
       res.status(201).json({id: newUser.id, name: newUser.full_name});
     }catch(e){
       
-      res.status(500).json(InternalErrors.ONBOARDING_FAILED);
+      res.status(500).json({error:[InternalErrors.ONBOARDING_FAILED]});
     }
     
   };
@@ -51,7 +51,7 @@ export default class UserController {
       const user = await userModel.get(req.body.id);
       res.status(200).json(user);
     } catch (e) {
-      res.status(404).json(InternalErrors.USER_NOT_FOUND);
+      res.status(404).json({error:[InternalErrors.USER_NOT_FOUND]});
     }
   };
 
@@ -71,14 +71,25 @@ export default class UserController {
           const token = jwt.sign({id: userId}, process.env.JWT_SECRET_KEY, {
             expiresIn: 6000
           })
-          return res.json({ auth: true, token: token});
+          const accounts = await userModel.getAccounts(userId);
+          return res.json({ auth: true, token: token, accounts: accounts});
         }
       }
 
-      return res.status(401).json(InternalErrors.BAD_CREDENTIALS);
+      return res.status(401).json({error:[InternalErrors.BAD_CREDENTIALS]});
 
-    } catch (e) {
-      res.status(404).json(InternalErrors.USER_NOT_FOUND);
+    } catch (err) {
+      res.status(404).json({error:[InternalErrors.USER_NOT_FOUND]});
+    }
+  }
+
+  getAccounts = async (req: Request, res: Response) => {
+    try{
+      const accounts = await userModel.getAccounts(res.locals.token.id);
+      res.status(200).json({accounts: accounts});
+    }catch(err:any){
+      console.error(err)
+      return res.status(500).json({error: [err.error]})
     }
   }
 }
