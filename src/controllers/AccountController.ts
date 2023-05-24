@@ -141,7 +141,7 @@ export default class AccountController{
       }
     }
 
-    getExtrato =async (req: Request, res: Response) => {
+    getExtrato = async (req: Request, res: Response) => {
       try{
         if(!req.query.accountId) throw new CustomError(InternalErrors.PARAMS_NOT_DEFINED);
         
@@ -179,6 +179,16 @@ export default class AccountController{
         return res.status(500).json({error:[err.error]})
       }
       
+    }
+
+    updatePassword =async (req: Request, res: Response) => {
+      try{
+        await accountModel.updatePassword(req.body.transaction_password, res.locals.token.id);
+        return res.status(200).send();
+      }catch(err: any){
+        console.error(err);
+        return res.status(500).json({error: [err.error]});
+      }
     }
 }
 

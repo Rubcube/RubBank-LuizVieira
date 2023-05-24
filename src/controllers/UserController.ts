@@ -1,17 +1,19 @@
 import { Request, Response } from "express";
 import  jwt from "jsonwebtoken";
-import { UserAuthIn, UserInfoIn, UserOut } from "dtos/UsersDTO";
+import { UserAuthIn, UserAuthUpdate, UserInfoIn, UserInfoUpdate, UserOut } from "dtos/UsersDTO";
 import UserModel from "models/UserModel";
 import UserAuthModel from "models/UserAuthModel";
 import * as dotenv from 'dotenv'
 import { replaceRegex } from "utils/regex";
-import { InternalErrors } from "utils/ErrorsType";
+import CustomError, { InternalErrors } from "utils/ErrorsType";
 import AccountModel from "models/AccountModel";
+import { AddressUpdate } from "dtos/AddressDTO";
+import AddressModel from "models/AddressModel";
 dotenv.config()
 
 const userModel = new UserModel();
 const userAuthModel = new UserAuthModel();
-const accountModel = new AccountModel();
+const addressModel = new AddressModel();
 
 export default class UserController {
 
@@ -48,10 +50,21 @@ export default class UserController {
 
   getByToken = async (req: Request, res: Response) => {
     try {
-      const user = await userModel.get(req.body.id);
-      res.status(200).json(user);
-    } catch (e) {
-      res.status(404).json({error:[InternalErrors.USER_NOT_FOUND]});
+      const user = await userModel.get(res.locals.token.id);
+      if(user?.status !== "ACTIVE") throw new CustomError(InternalErrors.ACCOUNT_STATUS_ERROR);
+      res.status(200).json({user: {
+        full_name: user.full_name,
+        cpf: user.user_auth?.cpf,
+        email: user.email,
+        phone: user.phone,
+        birth: user.birth,
+        account: user.account,
+        address: user.address,
+
+      }});
+    } catch (err: any) {
+      console.error(err);
+      return res.status(500).json({error: [err.error]});
     }
   };
 
@@ -90,6 +103,59 @@ export default class UserController {
     }catch(err:any){
       console.error(err)
       return res.status(500).json({error: [err.error]})
+    }
+  }
+
+  updateInfo = async (req: Request, res: Response) => {
+    try{
+      const dataUser: UserInfoUpdate = {
+        full_name: req.body.full_name? req.body.full_name: undefined,
+        birth: req.body.birth? req.body.birth: undefined,
+        email: req.body.email? req.body.email: undefined,
+        phone: req.body.phone? req.body.phone: undefined
+      }
+      
+      if(await userModel.userExists(dataUser)) throw new CustomError(InternalErrors.INTERNAL_ERROR);
+
+      await userModel.updateInfo(dataUser, res.locals.token.id);
+
+      return res.status(200).send();
+    }catch(err: any){
+      console.error(err);
+      return res.status(500).json({error: [err.error]});
+    }
+  }
+
+  updateAuth = async (req: Request, res: Response) => {
+    try{
+      const dataUser: UserAuthUpdate = {
+        ...req.body
+      }
+      await userAuthModel.updateAuth(dataUser, res.locals.token.id)
+
+      return res.status(200).send();
+    }catch(err: any){
+      console.error(err);
+      return res.status(500).json({error: [err.error]});
+    }
+  }
+
+  updateAddress = async (req: Request, res: Response) => {
+    try{
+      if(!req.params.id) throw new CustomError(InternalErrors.PARAMS_NOT_DEFINED);
+      
+      if(await addressModel.getAddressByUser(res.locals.token.id, req.params.id as string) === null) 
+        throw new CustomError(InternalErrors.ADDRESS_NOT_FOUND);
+
+      const dataUser: AddressUpdate = {
+        ...req.body
+      }
+      await addressModel.update(dataUser, req.params.id as string)
+
+      return res.status(200).send();
+    }catch(err: any){
+      console.error(err);
+      return res.status(500).json({error: [err.error]});
     }
   }
 }

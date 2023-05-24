@@ -244,5 +244,13 @@ export default class AccountModel {
     return {result: result, pages: pages}
   }
 
-
+  updatePassword =async (password: string ,accountId: string) => {
+    return await prisma.account.update({
+      where: { id: accountId},
+      data: {
+        transaction_password: password,
+        updated_at: new Date()
+      }
+    }) 
+  }
 };

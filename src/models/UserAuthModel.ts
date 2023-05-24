@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { UserAuthIn } from 'dtos/UsersDTO';
+import { UserAuthIn, UserAuthUpdate } from 'dtos/UsersDTO';
 
 const bcrypt = require('bcrypt');
 const prisma = new PrismaClient();
@@ -18,5 +18,16 @@ export default class UserAuthModel {
     }
     return null;
 
+  }
+
+  updateAuth = async (data: UserAuthUpdate, userId: string) => {
+    const salt = bcrypt.genSaltSync(10);
+    return await prisma.user_auth.update({
+      where:{user_info_id: userId},
+      data:{
+        password: bcrypt.hashSync(data.password, salt),
+        updated_at: new Date()
+      }
+    })
   }
 };

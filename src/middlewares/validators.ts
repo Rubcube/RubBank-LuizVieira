@@ -137,6 +137,100 @@ export const GetAccountParamsValidation = (req: Request, res: Response, next: Ne
   next();
 }
 
+export const PutAddressValidation = (req: Request, res: Response, next: NextFunction) => {
+
+  const address = z.object({
+    cep: z.string().trim().min(8, {message: ErrorsMessage.invalid_length.cep}).nullish(),
+    type: z.string().trim().nullish(),
+    street: z.string().trim().min(2, {message: ErrorsMessage.invalid_length.street}).nullish(),
+    number: z.string().trim().nullish(),
+    complement: z.string().trim().nullish(),
+    city: z.string().trim().nullish(),
+    state: z.string().trim().length(2, {message: ErrorsMessage.invalid_length.state}).nullish()
+  }).safeParse({...req.body}, {
+    errorMap: (issue, _ctx) => {
+      if(issue.message){return {message: issue.message}};
+      switch(issue.code){
+        case 'invalid_string': return {message: ErrorsMessage.invalid_string.default};
+        case 'invalid_type': return {message: ErrorsMessage.invalid_type};
+        default: return {message: ErrorsMessage.default};
+      }
+    }
+  });
+
+  if(!address.success){
+    return res.status(400).send({error: address.error.issues});
+  }
+  next();
+}
+
+export const PutUserValidation = (req: Request, res: Response, next: NextFunction) => {
+
+  const user = z.object({
+    full_name: z.string().trim().regex(fullNameRegex, ErrorsMessage.invalid_string.default).nullish(),
+    phone: z.string().trim().min(11, {message: ErrorsMessage.invalid_length.phone}).regex(phoneRegex).nullish(),
+    birth: z.date().nullish(),
+    email: z.string().trim().regex(emailRegex, ErrorsMessage.invalid_string.default).nullish()
+  }).safeParse({...req.body}, {
+    errorMap: (issue, _ctx) => {
+      if(issue.message){return {message: issue.message}};
+      switch(issue.code){
+        case 'invalid_string': return {message: ErrorsMessage.invalid_string.default};
+        case 'invalid_type': return {message: ErrorsMessage.invalid_type};
+        default: return {message: ErrorsMessage.default};
+      }
+    }
+  });
+
+  if(!user.success){
+    return res.status(400).send({error: user.error.issues});
+  }
+  next();
+}
+
+export const PutUserAuthValidation = (req: Request, res: Response, next: NextFunction) => {
+
+  const user = z.object({
+    password: z.string().trim().regex(passwordRegex, {message: ErrorsMessage.invalid_string.password})
+  }).safeParse({...req.body}, {
+    errorMap: (issue, _ctx) => {
+      if(issue.message){return {message: issue.message}};
+      switch(issue.code){
+        case 'invalid_string': return {message: ErrorsMessage.invalid_string.default};
+        case 'invalid_type': return {message: ErrorsMessage.invalid_type};
+        default: return {message: ErrorsMessage.default};
+      }
+    }
+  });
+
+  if(!user.success){
+    return res.status(400).send({error: user.error.issues});
+  }
+  next();
+}
+
+export const PutUserPassValidation = (req: Request, res: Response, next: NextFunction) => {
+
+  const pass = z.object({
+    transaction_password: 
+    z.string().trim().regex(transactionPasswordRegex, {message: ErrorsMessage.invalid_string.transaction_password})
+  }).safeParse({...req.body}, {
+    errorMap: (issue, _ctx) => {
+      if(issue.message){return {message: issue.message}};
+      switch(issue.code){
+        case 'invalid_string': return {message: ErrorsMessage.invalid_string.default};
+        case 'invalid_type': return {message: ErrorsMessage.invalid_type};
+        default: return {message: ErrorsMessage.default};
+      }
+    }
+  });
+
+  if(!pass.success){
+    return res.status(400).send({error: pass.error.issues});
+  }
+  next();
+}
+
 export const cpfValidator = (cpf: string) => {
 	if(cpf == '') return false;	
 	if (cpf.length != 11 || 

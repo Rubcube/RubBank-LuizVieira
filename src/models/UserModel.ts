@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { UserInfoIn } from 'dtos/UsersDTO';
+import { UserAuthUpdate, UserInfoIn, UserInfoUpdate } from 'dtos/UsersDTO';
 const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
@@ -37,16 +37,36 @@ export default class UserModel {
 
   get = async (userId: string) => {
 
-    return await prisma.user_info.findFirst({
+    return await prisma.user_info.findUnique({
       where: {
-        user_auth:{
-          id: userId
-        }
+        id: userId
       },
       include:{
-        account: true,
-        address: true,
-        user_auth: true
+        account: {
+          select:{
+            id: true,
+            account_number: true,
+            agency: true
+          }
+        },
+        address: {
+          select:{
+            id: true,
+            cep: true,
+            street: true,
+            number: true,
+            neighborhood: true,
+            complement: true,
+            city: true,          
+            state: true, 
+            type: true
+          }
+        },
+        user_auth: {
+          select: {
+            cpf: true
+          }
+        }
       }
     });
 
@@ -63,5 +83,27 @@ export default class UserModel {
         account_number: true
       }
     });
+  }
+
+  updateInfo = async (data: UserInfoUpdate, userId: string) => {
+    return await prisma.user_info.update({
+      where:{id: userId},
+      data:{
+        ...data,
+        updated_at: new Date()
+      }
+    })
+  }
+
+  userExists = async (data: UserInfoUpdate) => {
+    return await prisma.user_info.findFirst({
+      where: 
+        data.email? {
+          email: data.email
+        }:
+        data.phone? {
+          phone: data.phone
+        }: undefined
+    })
   }
 };

@@ -68,12 +68,14 @@ interface InternalErrorsType{
     INVALID_DATE:          CustomErrorType,
     TRANSACTION_DENIED:    CustomErrorType,
     TRANSACTION_NOT_FOUND: CustomErrorType,
+    ADDRESS_NOT_FOUND:     CustomErrorType,
+    INTERNAL_ERROR:        CustomErrorType
 }
 
 export const InternalErrors: InternalErrorsType = {
     ONBOARDING_FAILED:       ({code: "onboarding_failed",     message: "Falha ao criar usuário"}),
     BAD_CREDENTIALS:         ({code: "bad_credentials",       message: "Credenciais inválidas"}),
-    USER_NOT_FOUND:          ({code: "user_not_find",         message: "Usuário não encontrado"}),
+    USER_NOT_FOUND:          ({code: "user_not_found",        message: "Usuário não encontrado"}),
     TOKEN_ERROR:             ({code: "token_error",           message: "Token de autenticação não encontrado ou expirado"}),
     TOKEN_AUTH_ERROR:        ({code: "token_auth_error",      message: "Falha ao autenticar token"}),
     ACCESS_DENIED:           ({code: "access_denied",         message: "Acesso negado"}),
@@ -85,7 +87,9 @@ export const InternalErrors: InternalErrorsType = {
     TRANSACTION_FAILED:      ({code: "transaction_failed",    message: "Falha ao tentar realizar a transação"}),
     INVALID_DATE:            ({code: "invalid_date",          message: "Data inválida"}),
     TRANSACTION_DENIED:      ({code: "transaction_denied",    message: "Transação negada"}),
-    TRANSACTION_NOT_FOUND:   ({code: "transaction_not_found", message: "Transação não encontrada"})
+    TRANSACTION_NOT_FOUND:   ({code: "transaction_not_found", message: "Transação não encontrada"}),
+    ADDRESS_NOT_FOUND:       ({code: "address_not_found",     message: "Endereço não encontrado"}),
+    INTERNAL_ERROR:          ({code: "internal_error",        message: "Erro interno ao processar requisição"}),
 }
 
 export default class CustomError{

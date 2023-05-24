@@ -9,3 +9,14 @@ export interface AddressIn {
   city: string;
   state: string;
 }
+
+export interface AddressUpdate {
+  cep?: string;
+  type?: string
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+}

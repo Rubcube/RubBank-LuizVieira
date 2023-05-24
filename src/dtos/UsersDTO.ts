@@ -11,8 +11,15 @@ export interface UserInfoIn{
   account: AccountIn
 }
 
-export interface UserInfoOut{
-  
+export interface UserInfoUpdate{
+  full_name?: string
+  phone?: string
+  email?: string
+  birth?: Date
+}
+
+export interface UserAuthUpdate{
+  password: string
 }
 
 export interface UserAuthIn{
