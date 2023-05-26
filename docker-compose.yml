@@ -12,7 +12,6 @@ services:
     networks:
       - rubcamp
     environment:
-      - DATABASE_URL=postgres://rubbankdb_user:MZRKP7RzvLCVMCduLs369wQQu1iY6qES@dpg-chodocak728h7nu9jnqg-a/rubbankdb
       - POSTGRES_DB=rubcamp
       - POSTGRES_USER=rubcamp
       - POSTGRES_PASSWORD=rubcamp123

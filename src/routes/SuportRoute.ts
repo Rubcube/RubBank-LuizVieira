@@ -14,7 +14,7 @@ routes.post("/ticket/message/", suportAuthentication, suportController.sendMessa
 
 routes.get('/', suportAuthentication, suportController.get);
 routes.get("/user",  suportAuthentication, suportController.getUser);
-routes.get('/user/account/transfers', suportAuthentication, suportController.)
+//routes.get('/user/account/transfers', suportAuthentication, suportController.)
 routes.get('/ticket/messages/', suportAuthentication, suportController.getMessages);
 routes.get('/tickets/', suportAuthentication, suportController.getTickets);
 
