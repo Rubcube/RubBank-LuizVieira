@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, TicketStatus } from '@prisma/client';
 import { SuportAuth, SuportInfo, params } from 'dtos/SuportDTO';
 import { take } from 'utils/Constantes';
 
@@ -17,6 +17,26 @@ export default class SuportModel {
                     create: { 
                         cpf: suportData.suport_auth.cpf,
                         password: bcrypt.hashSync(suportData.suport_auth.password, salt)
+                    }
+                }
+            }
+        })
+    }
+
+    get = async (id:string) => {
+        return await prisma.suport_info.findUnique({
+            where:{
+                id: id
+            },
+            select:{
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                created_at: true,
+                suport_auth: {
+                    select: {
+                        cpf: true
                     }
                 }
             }
@@ -96,6 +116,16 @@ export default class SuportModel {
           orderBy: {created_at: "asc"},
           skip: (page - 1) * take,
           take: take
+        })
+    }
+
+    putTicketStatus = async (ticketId:string, status:TicketStatus) => {
+        return await prisma.ticket.update({
+            where:{id: ticketId},
+            data:{
+                status: status,
+                updated_at: new Date()
+            }
         })
     }
 

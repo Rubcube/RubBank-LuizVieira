@@ -48,7 +48,8 @@ export default class UserModel {
           select:{
             id: true,
             account_number: true,
-            agency: true
+            agency: true,
+            balance: true,
           }
         },
         address: {

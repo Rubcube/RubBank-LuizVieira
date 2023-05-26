@@ -1,4 +1,4 @@
-import { TicketStatus } from "@prisma/client";
+import { Account, TicketStatus } from "@prisma/client";
 import { SuportAuth, SuportInfo, params, tickets } from "dtos/SuportDTO";
 import { Request, Response } from "express";
 import { DateTime } from "luxon";
@@ -8,8 +8,12 @@ import { regex, take } from "utils/Constantes";
 import { z } from "zod";
 import { messageOut, messages } from "dtos/MessageDTO";
 import  jwt from "jsonwebtoken";
+import UserModel from "models/UserModel";
+import AccountModel from "models/AccountModel";
 
 const suportModel = new SuportModel();
+const userModel = new UserModel();
+const accountModel = new AccountModel();
 
 export default class SuportController{
     create = async (req: Request, res: Response) => {
@@ -32,6 +36,17 @@ export default class SuportController{
             console.error(err);
             res.status(500).json({error:[InternalErrors.INTERNAL_ERROR]});
         }
+    }
+
+    get = async (req: Request, res: Response) => {
+      try {
+        const suport = await suportModel.get(res.locals.token.id);
+        //if(suport?.status !== "ACTIVE") throw new CustomError(InternalErrors.ACCOUNT_STATUS_ERROR);
+        res.status(200).json({user: suport});
+      } catch (err: any) {
+        console.error(err);
+        return res.status(500).json({error: [err.error]});
+      }
     }
 
     getTickets = async (req: Request, res: Response) => {
@@ -125,7 +140,7 @@ export default class SuportController{
       }
     }
 
-    getMessages =async (req: Request, res: Response) => {
+    getMessages = async (req: Request, res: Response) => {
       try{
         if(!req.query.ticketId) throw new CustomError(InternalErrors.PARAMS_NOT_DEFINED);
         
@@ -190,5 +205,76 @@ export default class SuportController{
         res.status(404).json({error:[InternalErrors.USER_NOT_FOUND]});
       }
     }
+
+    getUser = async (req: Request, res:Response) => {
+      try{
+        const user = await userModel.get(req.query.userId as string);
+        res.status(200).json({user: user});
+      }catch(err:any){
+        console.error(err)
+        return res.status(500).json({error: [err.error]})
+      }
+    }
+
+    putTicketStatus = async (req: Request, res:Response) => {
+      try{   
+        if(req.query.status
+          && req.query.status !== TicketStatus.DOING 
+          && req.query.status !== TicketStatus.DONE
+          && req.query.status !== TicketStatus.TODO) 
+          throw new CustomError(InternalErrors.INTERNAL_ERROR);
+
+        if(!req.query.ticketId) throw new CustomError(InternalErrors.PARAMS_NOT_DEFINED)
+
+        const result = await suportModel.putTicketStatus(req.query.ticketId as string, req.query.status as TicketStatus);
+
+        return res.status(200).json(result);
+      }catch(err:any){
+        console.error(err)
+        return res.status(500).json({error: [err.error]})
+      }
+    }
+
+    /*getExtrato = async (req: Request, res: Response) => {
+      try{
+        if(!req.query.accountId) throw new CustomError(InternalErrors.PARAMS_NOT_DEFINED);
+        
+        const account: Account | null  = await accountModel.getAccountById(req.query.accountId as string);
+
+        if(account === null || res.locals.token.id !== account.user_id) throw new CustomError(InternalErrors.ACCESS_DENIED);
+
+        const page = z.number().safeParse(req.query.page? parseInt(req.query.page as string): 1);
+        if(!page.success) throw new CustomError(InternalErrors.INVALID_PARAMS)
+
+        const result = await accountModel.getTransfers(req.query.accountId as string, page.data, res.locals.params.data);
+        
+        let transfers: Array<transfers> = [];
+
+        result.result.forEach( (transaction) => {
+          transfers.push({
+            id: transaction.id,
+            schedule_date: transaction.schedule_date,
+            value: transaction.value,
+            status: transaction.status,
+            type: transaction.account_id === req.query.accountId? "out" : "in"
+          })
+        })
+
+        let extrato: resExtrato = {
+          pagination: {
+            pages: Math.ceil(result.pages / take),
+            actualPage: page.data,
+            maxPerPage: take,
+          },
+          transfers: transfers
+        };
+        
+        return res.status(200).json(extrato);
+      }catch(err: any){
+        console.error(err);
+        return res.status(500).json({error:[err.error]})
+      }
+      
+    }*/
 }
 
