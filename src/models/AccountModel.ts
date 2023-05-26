@@ -3,6 +3,7 @@ import { TransferIn } from 'dtos/TransferDTO';
 import { DateTime } from 'luxon';
 import CustomError from 'utils/ErrorsType';
 import {InternalErrors} from 'utils/ErrorsType';
+import { take } from 'utils/Constantes';
 
 const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
@@ -198,8 +199,8 @@ export default class AccountModel {
           AND: params?[
             { 
               schedule_date:{
-                gte: params.startDate? params.startDate: DateTime.now().minus({days: 7}).toJSDate(),
-                lte: params.endDate? params.endDate: DateTime.now().plus({days: 7}).toJSDate()
+                gte: params.startDate? params.startDate: DateTime.now().minus({days: 15}).toJSDate(),
+                lte: params.endDate? params.endDate: DateTime.now().toJSDate()
               }
             },
             {
@@ -207,8 +208,8 @@ export default class AccountModel {
             }
           ]: undefined,
         },
-        skip: (page - 1) * 10,
-        take: 10,
+        skip: (page - 1) * take,
+        take: take,
       });
   
       pages = await prisma.transfer.count({
@@ -244,11 +245,28 @@ export default class AccountModel {
     return {result: result, pages: pages}
   }
 
+  verifyPassword = async (accountId: string, password: string) => {
+    const account = await prisma.account.findUnique({
+      where: {id: accountId}
+    })
+
+    return account? await bcrypt.compare( password, account.transaction_password)? true: false: false;
+  }
+
+  verifyAccount = async (accountId: string, userId: string) => {
+    const account = await prisma.account.findFirst({
+      where: {id: accountId, user_id: userId}
+    })
+
+    return account? true: false;
+  }
+
   updatePassword =async (password: string ,accountId: string) => {
+    const salt = bcrypt.genSaltSync(10);
     return await prisma.account.update({
       where: { id: accountId},
       data: {
-        transaction_password: password,
+        transaction_password: bcrypt.hashSync(password, salt),
         updated_at: new Date()
       }
     }) 

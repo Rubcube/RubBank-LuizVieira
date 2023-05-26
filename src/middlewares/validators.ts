@@ -1,22 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
 import { DateTime } from 'luxon';
 import { ErrorsMessage } from 'utils/ErrorsType';
-import { emailRegex, fullNameRegex, passwordRegex, phoneRegex, replaceRegex, transactionPasswordRegex } from 'utils/regex';
+import { regex } from 'utils/Constantes';
 import { z } from 'zod';
 
 export const OnboardingValidation = (req: Request, res:Response, next: NextFunction) => {
   if(req.body.birth) req.body.birth = DateTime.fromISO(req.body.birth).toJSDate();
   const UserIn = z.object({
-    full_name: z.string().trim().regex(fullNameRegex, ErrorsMessage.invalid_string.default),
-    phone: z.string().trim().min(11, {message: ErrorsMessage.invalid_length.phone}).regex(phoneRegex),
+    full_name: z.string().trim().regex(regex.fullName, ErrorsMessage.invalid_string.default),
+    phone: z.string().trim().min(11, {message: ErrorsMessage.invalid_length.phone}).regex(regex.phone),
     birth: z.date().nullish(),
-    email: z.string().trim().regex(emailRegex, ErrorsMessage.invalid_string.default),
+    email: z.string().trim().regex(regex.email, ErrorsMessage.invalid_string.default),
 
     user_auth: z.object({
       cpf: 
-        z.string().min(11, ErrorsMessage.invalid_length.cpf).transform((value) => value.replace(replaceRegex ,''))
+        z.string().min(11, ErrorsMessage.invalid_length.cpf).transform((value) => value.replace(regex.replace ,''))
          .refine((value) => cpfValidator(value), {message: ErrorsMessage.custom.invalidCPF}),
-      password: z.string().trim().regex(passwordRegex, {message: ErrorsMessage.invalid_string.password})
+      password: z.string().trim().regex(regex.password, {message: ErrorsMessage.invalid_string.password})
     }),
     
     address: z.object({
@@ -31,7 +31,7 @@ export const OnboardingValidation = (req: Request, res:Response, next: NextFunct
 
     account: z.object({
       transaction_password: 
-        z.string().trim().regex(transactionPasswordRegex, {message: ErrorsMessage.invalid_string.transaction_password})
+        z.string().trim().regex(regex.transactionPassword, {message: ErrorsMessage.invalid_string.transaction_password})
          .length(4, {message: ErrorsMessage.invalid_string.transaction_password})
     }),
     
@@ -59,7 +59,7 @@ export const TransferValidation = (req: Request, res: Response, next: NextFuncti
     accountReceiverId: z.string().trim().uuid(),
     scheduleTo: z.date(),
     value: z.number().min(0.05, ErrorsMessage.invalid_length.value),
-    transaction_password: z.string().trim().regex(transactionPasswordRegex, ErrorsMessage.invalid_string.transaction_password),
+    transaction_password: z.string().trim().regex(regex.transactionPassword, ErrorsMessage.invalid_string.transaction_password),
   }).safeParse(req.body, {
     errorMap: (issue, _ctx) => {
       if(issue.message){return {message: issue.message}};
@@ -167,10 +167,10 @@ export const PutAddressValidation = (req: Request, res: Response, next: NextFunc
 export const PutUserValidation = (req: Request, res: Response, next: NextFunction) => {
 
   const user = z.object({
-    full_name: z.string().trim().regex(fullNameRegex, ErrorsMessage.invalid_string.default).nullish(),
-    phone: z.string().trim().min(11, {message: ErrorsMessage.invalid_length.phone}).regex(phoneRegex).nullish(),
+    full_name: z.string().trim().regex(regex.fullName, ErrorsMessage.invalid_string.default).nullish(),
+    phone: z.string().trim().min(11, {message: ErrorsMessage.invalid_length.phone}).regex(regex.phone).nullish(),
     birth: z.date().nullish(),
-    email: z.string().trim().regex(emailRegex, ErrorsMessage.invalid_string.default).nullish()
+    email: z.string().trim().regex(regex.email, ErrorsMessage.invalid_string.default).nullish()
   }).safeParse({...req.body}, {
     errorMap: (issue, _ctx) => {
       if(issue.message){return {message: issue.message}};
@@ -191,7 +191,8 @@ export const PutUserValidation = (req: Request, res: Response, next: NextFunctio
 export const PutUserAuthValidation = (req: Request, res: Response, next: NextFunction) => {
 
   const user = z.object({
-    password: z.string().trim().regex(passwordRegex, {message: ErrorsMessage.invalid_string.password})
+    oldPassword: z.string().trim().regex(regex.password, {message: ErrorsMessage.invalid_string.password}),
+    newPassword: z.string().trim().regex(regex.password, {message: ErrorsMessage.invalid_string.password})
   }).safeParse({...req.body}, {
     errorMap: (issue, _ctx) => {
       if(issue.message){return {message: issue.message}};
@@ -212,8 +213,10 @@ export const PutUserAuthValidation = (req: Request, res: Response, next: NextFun
 export const PutUserPassValidation = (req: Request, res: Response, next: NextFunction) => {
 
   const pass = z.object({
-    transaction_password: 
-    z.string().trim().regex(transactionPasswordRegex, {message: ErrorsMessage.invalid_string.transaction_password})
+    new_transaction_password: 
+    z.string().trim().regex(regex.transactionPassword, {message: ErrorsMessage.invalid_string.transaction_password}),
+    old_transaction_password: 
+    z.string().trim().regex(regex.transactionPassword, {message: ErrorsMessage.invalid_string.transaction_password})
   }).safeParse({...req.body}, {
     errorMap: (issue, _ctx) => {
       if(issue.message){return {message: issue.message}};
@@ -227,6 +230,36 @@ export const PutUserPassValidation = (req: Request, res: Response, next: NextFun
 
   if(!pass.success){
     return res.status(400).send({error: pass.error.issues});
+  }
+  next();
+}
+
+export const createSuportValidation = (req: Request, res:Response, next: NextFunction) => {
+  const SuportIn = z.object({
+    name: z.string().trim().regex(regex.fullName, ErrorsMessage.invalid_string.default),
+    email: z.string().trim().regex(regex.email, ErrorsMessage.invalid_string.default),
+    role: z.string().trim(),
+    suport_auth: z.object({
+      cpf: 
+        z.string().min(11, ErrorsMessage.invalid_length.cpf).transform((value) => value.replace(regex.replace ,''))
+         .refine((value) => cpfValidator(value), {message: ErrorsMessage.custom.invalidCPF}),
+      password: z.string().trim().regex(regex.password, {message: ErrorsMessage.invalid_string.password})
+    }),
+    
+    
+  }) .safeParse(req.body, {
+    errorMap: (issue, _ctx) => {
+      if(issue.message){return {message: issue.message}};
+      switch(issue.code){
+        case 'invalid_string': return {message: ErrorsMessage.invalid_string.default};
+        case 'invalid_type': return {message: ErrorsMessage.invalid_type};
+        default: return {message: ErrorsMessage.default};
+      }
+    }
+  });
+  
+  if(!SuportIn.success){
+    return res.status(400).send({error: SuportIn.error.issues});
   }
   next();
 }

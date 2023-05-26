@@ -1,6 +1,6 @@
 import { Prisma, TransferStatus } from "@prisma/client";
 import { DateTime } from "luxon";
-import { UserInfoOut } from "./UsersDTO";
+import { pagination } from "./GlobalDTO";
 
 export interface TransferIn{
     accountId: string,
@@ -36,12 +36,6 @@ export interface transfers{
     value: Prisma.Decimal,
     type: string,
     status: TransferStatus
-}
-
-interface pagination {
-    pages: number,
-    actualPage: number,
-    maxPerPage: number,
 }
 
 export type resExtrato = {

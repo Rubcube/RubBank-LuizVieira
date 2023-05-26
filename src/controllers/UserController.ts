@@ -4,11 +4,15 @@ import { UserAuthIn, UserAuthUpdate, UserInfoIn, UserInfoUpdate, UserOut } from 
 import UserModel from "models/UserModel";
 import UserAuthModel from "models/UserAuthModel";
 import * as dotenv from 'dotenv'
-import { replaceRegex } from "utils/regex";
+import { regex, take } from "utils/Constantes";
 import CustomError, { InternalErrors } from "utils/ErrorsType";
-import AccountModel from "models/AccountModel";
 import { AddressUpdate } from "dtos/AddressDTO";
 import AddressModel from "models/AddressModel";
+import { messageOut, messages } from "dtos/MessageDTO";
+import { params, tickets } from "dtos/SuportDTO";
+import { z } from "zod";
+import { DateTime } from "luxon";
+import { TicketStatus } from "@prisma/client";
 dotenv.config()
 
 const userModel = new UserModel();
@@ -22,16 +26,16 @@ export default class UserController {
 
       const userInfo : UserInfoIn = { 
         full_name: req.body.full_name,
-        phone: req.body.phone.replace(replaceRegex,''),
+        phone: req.body.phone.replace(regex.replace,''),
         email: req.body.email,
         birth: new Date(req.body.birth),
         user_auth: {
           ...req.body.user_auth,
-          cpf: req.body.user_auth.cpf.replace(replaceRegex,'')
+          cpf: req.body.user_auth.cpf.replace(regex.replace,'')
         },
         address: {
           ...req.body.address,
-          cep: req.body.address.cep.replace(replaceRegex,'')
+          cep: req.body.address.cep.replace(regex.replace,'')
         },
         account: {
           transaction_password: req.body.account.transaction_password
@@ -73,7 +77,7 @@ export default class UserController {
     try{
 
       const user: UserAuthIn = {
-        cpf: req.body.cpf.replace(replaceRegex,''),
+        cpf: req.body.cpf.replace(regex.replace,''),
         password: req.body.password
       }
 
@@ -131,6 +135,9 @@ export default class UserController {
       const dataUser: UserAuthUpdate = {
         ...req.body
       }
+
+      if(!await userAuthModel.verifyPassword(res.locals.token.id, dataUser.oldPassword)) throw new CustomError(InternalErrors.BAD_CREDENTIALS)
+
       await userAuthModel.updateAuth(dataUser, res.locals.token.id)
 
       return res.status(200).send();
@@ -156,6 +163,144 @@ export default class UserController {
     }catch(err: any){
       console.error(err);
       return res.status(500).json({error: [err.error]});
+    }
+  }
+
+  createTicket = async (req: Request, res: Response) => {
+    try{
+      const ticket = await userModel.createTicket(req.body.title, req.body.description, res.locals.token.id);
+      return res.status(200).json(ticket);
+    }catch(err: any){
+      console.error(err);
+      return res.status(500).json({error: [err.error]});
+    }
+  }
+
+  getTickets = async (req: Request, res: Response) => {
+    let startDate: Date | undefined = undefined;
+    let endDate: Date | undefined = undefined;
+
+    try{
+      const page = z.number().safeParse(req.query.page? parseInt(req.query.page as string): 1);
+      
+      if(!page.success) throw new CustomError(InternalErrors.INVALID_PARAMS)
+      
+      if(req.query.status
+        && req.query.status !== TicketStatus.DOING 
+        && req.query.status !== TicketStatus.DONE
+        && req.query.status !== TicketStatus.TODO) 
+        throw new CustomError(InternalErrors.INTERNAL_ERROR);
+
+      if(req.query.startDate){
+        startDate = DateTime.fromISO(req.query.startDate as string).toJSDate();
+        const parse = z.date().safeParse(startDate);
+        if(!parse.success) throw new CustomError(InternalErrors.INVALID_DATE);
+      }
+
+      if(req.query.endDate){
+        endDate = DateTime.fromISO(req.query.endDate as string).toJSDate();
+        const parse = z.date().safeParse(endDate);
+        if(!parse.success) throw new CustomError(InternalErrors.INVALID_DATE)
+      }
+
+      const params: params = {
+        status: req.query.status? req.query.status as TicketStatus: undefined,
+        startDate: startDate,
+        endDate: endDate,
+        userId: res.locals.token.id
+      }
+
+      const result = await userModel.getTickets(page.data, params);
+
+      const tickets: tickets = {
+        pagination: {
+          actualPage: page.data,
+          maxPerPage: take,
+          pages: Math.ceil(result.pages / take),
+        },
+        tickets: result.tickets
+      };
+      return res.status(200).json(tickets);
+    }catch(err:any){
+      console.error(err)
+      return res.status(500).json({error: [err.error]})
+    }
+  }
+
+  sendMessage = async (req: Request, res: Response) => {
+    try{
+      if(!req.query.ticketId) throw new CustomError(InternalErrors.PARAMS_NOT_DEFINED);
+      
+      const page = z.number().safeParse(req.query.page? parseInt(req.query.page as string): 1);
+      
+      if(!page.success) throw new CustomError(InternalErrors.INVALID_PARAMS);
+
+      if(await userModel.getTicketById(res.locals.token.id, req.query.ticketId as string) === null) 
+        throw new CustomError(InternalErrors.TICKET_NOT_FOUND);
+
+      await userModel.createMessage(res.locals.token.id, req.query.ticketId as string, req.body.message);
+      const result = await userModel.getMessages(req.query.ticketId as string, page.data);
+
+      let messages: Array<messageOut> = [];
+
+      result.forEach( (message) => {
+        messages.push({
+          message: message.message,
+          direction: message.user_id? "send": "received",
+          created_at: message.created_at
+        })
+      })
+
+
+      const resObject: messages = {
+        pagination:{
+          actualPage: page.data,
+          maxPerPage: take
+        },
+        messages: messages
+      };
+
+      return res.status(200).json(resObject);
+    }catch(err:any){
+      console.error(err)
+      return res.status(500).json({error: [err.error]})
+    }
+  }
+
+  getMessages =async (req: Request, res: Response) => {
+    try{
+      if(!req.query.ticketId) throw new CustomError(InternalErrors.PARAMS_NOT_DEFINED);
+      
+      if(await userModel.getTicketById(res.locals.token.id, req.query.ticketId as string) === null) throw new CustomError(InternalErrors.TICKET_NOT_FOUND);
+
+      const page = z.number().safeParse(req.query.page? parseInt(req.query.page as string): 1);
+      
+      if(!page.success) throw new CustomError(InternalErrors.INVALID_PARAMS)
+
+      const result = await userModel.getMessages(req.query.ticketId as string, page.data);
+
+      let messages: Array<messageOut> = [];
+
+      result.forEach( (message) => {
+        messages.push({
+          message: message.message,
+          direction: message.user_id? "send": "received",
+          created_at: message.created_at
+        })
+      })
+
+      const resObject: messages = {
+        pagination:{
+          actualPage: page.data,
+          maxPerPage: take
+        },
+        messages: messages
+      };
+
+      return res.status(200).json(resObject);
+    }catch(err:any){
+      console.error(err)
+      return res.status(500).json({error: [err.error]})
     }
   }
 }

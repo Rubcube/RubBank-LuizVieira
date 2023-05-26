@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import { params } from 'dtos/SuportDTO';
 import { UserAuthUpdate, UserInfoIn, UserInfoUpdate } from 'dtos/UsersDTO';
+import { take } from 'utils/Constantes';
 const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
@@ -104,6 +106,81 @@ export default class UserModel {
         data.phone? {
           phone: data.phone
         }: undefined
+    })
+  }
+
+  createTicket = async (title: string, description: string, userId: string) => {
+    return await prisma.ticket.create({
+      data:{
+        title: title,
+        description: description,
+        status: "TODO",
+        user_info_id: userId
+      }
+    });
+  }
+
+  getTickets = async (page: number, params: params) => {
+    const tickets = await prisma.ticket.findMany({
+        orderBy:{
+            created_at: "asc"
+        },
+        where:{
+            created_at:{
+                gte: params.startDate,
+                lte: params.endDate
+            },
+            status: params.status,
+            user_info_id: params.userId
+        },
+        skip: (page - 1) * take,
+        take: take,
+    });
+
+    const pages = await prisma.ticket.count({
+        orderBy:{
+            created_at: "asc"
+        },
+        where:{
+            created_at:{
+                gte: params.startDate,
+                lte: params.endDate
+            },
+            status: params.status,
+            user_info_id: params.userId
+        },
+        skip: (page - 1) * take,
+        take: take,
+    });
+
+    return {tickets, pages};
+  }
+
+  getTicketById = async (userId: string, ticketId: string) => {
+    return await prisma.ticket.findFirst({
+      where:{
+        id: ticketId,
+        user_info_id: userId
+      }
+    })
+  }
+
+  getMessages = async (ticketId: string, page: number) => {
+    return await prisma.messages.findMany({
+      where: {ticket_id: ticketId},
+      orderBy: {created_at: "asc"},
+      skip: (page - 1) * take,
+      take: take
+    })
+  }
+
+  createMessage = async (userId: string, ticketId: string, message: string) => {
+    return await prisma.messages.create({
+      data:{
+        message: message,
+        ticket_id: ticketId,
+        user_id: userId,
+      }
     })
   }
 };

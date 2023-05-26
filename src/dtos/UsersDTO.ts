@@ -19,7 +19,8 @@ export interface UserInfoUpdate{
 }
 
 export interface UserAuthUpdate{
-  password: string
+  oldPassword: string
+  newPassword: string
 }
 
 export interface UserAuthIn{

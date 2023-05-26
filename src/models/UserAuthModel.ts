@@ -20,12 +20,20 @@ export default class UserAuthModel {
 
   }
 
+  verifyPassword = async (userId: string, password: string) => {
+    const user = await prisma.user_auth.findUnique({
+      where: {user_info_id: userId}
+    })
+
+    return user? await bcrypt.compare( password, user.password)? true: false: false;
+  }
+
   updateAuth = async (data: UserAuthUpdate, userId: string) => {
     const salt = bcrypt.genSaltSync(10);
     return await prisma.user_auth.update({
       where:{user_info_id: userId},
       data:{
-        password: bcrypt.hashSync(data.password, salt),
+        password: bcrypt.hashSync(data.newPassword, salt),
         updated_at: new Date()
       }
     })

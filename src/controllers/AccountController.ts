@@ -3,7 +3,9 @@ import { TransferIn, resExtrato, transferOut, transfers } from "dtos/TransferDTO
 import { Request, Response } from "express";
 import { DateTime } from "luxon";
 import AccountModel from "models/AccountModel";
+import { take } from "utils/Constantes";
 import CustomError, {InternalErrors} from "utils/ErrorsType";
+import { z } from "zod";
 const bcrypt = require('bcrypt');
 const accountModel = new AccountModel()
 
@@ -68,8 +70,34 @@ export default class AccountController{
           }
 
           const createdTransfer: any = await accountModel.createTransaction(transfer);
-          return res.status(201).json(createdTransfer.id);
 
+          if(!createdTransfer) throw new CustomError(InternalErrors.TRANSACTION_FAILED);
+          
+          const result = await accountModel.getDetailedTransfer(createdTransfer.id);
+
+          if(!result) throw new CustomError(InternalErrors.TRANSACTION_FAILED);
+
+          const detailedTransfer: transferOut = {
+            id: result.id,
+            value: result.value,
+            created_at: DateTime.fromJSDate(result.created_at),
+            schedule_date: DateTime.fromJSDate(result.schedule_date),
+            status: result.status,
+            type: result.account.user_id === res.locals.token.id? "out": "in",
+            account: {
+              agency: result.account.agency,
+              account_number: result.account.account_number,
+              full_name: result.account.user.full_name,
+              cpf: result.account.user.user_auth?.cpf,
+            },
+            account_receiver: {
+              agency: result.account_receiver.agency,
+              account_number: result.account_receiver.account_number,
+              full_name: result.account_receiver.user.full_name,
+              cpf: result.account_receiver.user.user_auth?.cpf,
+            },
+          }
+          return res.status(200).json({transfer: detailedTransfer});
         }catch(err: any){
           console.error(err);
           return res.status(400).json({error:[err.error]});
@@ -149,8 +177,10 @@ export default class AccountController{
 
         if(account === null || res.locals.token.id !== account.user_id) throw new CustomError(InternalErrors.ACCESS_DENIED);
 
-        const page: number = req.query.page? parseInt(req.query.page as string): 1;
-        const result = await accountModel.getTransfers(req.query.accountId as string, page, res.locals.params.data);
+        const page = z.number().safeParse(req.query.page? parseInt(req.query.page as string): 1);
+        if(!page.success) throw new CustomError(InternalErrors.INVALID_PARAMS)
+
+        const result = await accountModel.getTransfers(req.query.accountId as string, page.data, res.locals.params.data);
         
         let transfers: Array<transfers> = [];
 
@@ -166,9 +196,9 @@ export default class AccountController{
 
         let extrato: resExtrato = {
           pagination: {
-            pages: Math.ceil(result.pages / 10),
-            actualPage: page,
-            maxPerPage: 10,
+            pages: Math.ceil(result.pages / take),
+            actualPage: page.data,
+            maxPerPage: take,
           },
           transfers: transfers
         };
@@ -181,9 +211,12 @@ export default class AccountController{
       
     }
 
-    updatePassword =async (req: Request, res: Response) => {
+    updatePassword = async (req: Request, res: Response) => {
       try{
-        await accountModel.updatePassword(req.body.transaction_password, res.locals.token.id);
+        if(!await accountModel.verifyAccount(req.params.id, res.locals.token.id)) throw new CustomError(InternalErrors.ACCESS_DENIED);
+        if(!await accountModel.verifyPassword(req.params.id, req.body.old_transaction_password)) throw new CustomError(InternalErrors.BAD_CREDENTIALS);
+
+        await accountModel.updatePassword(req.body.new_transaction_password, req.params.id);
         return res.status(200).send();
       }catch(err: any){
         console.error(err);

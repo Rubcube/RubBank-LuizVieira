@@ -69,7 +69,9 @@ interface InternalErrorsType{
     TRANSACTION_DENIED:    CustomErrorType,
     TRANSACTION_NOT_FOUND: CustomErrorType,
     ADDRESS_NOT_FOUND:     CustomErrorType,
-    INTERNAL_ERROR:        CustomErrorType
+    INTERNAL_ERROR:        CustomErrorType,
+    TICKET_NOT_FOUND:      CustomErrorType,
+    INVALID_PARAMS:        CustomErrorType
 }
 
 export const InternalErrors: InternalErrorsType = {
@@ -90,6 +92,8 @@ export const InternalErrors: InternalErrorsType = {
     TRANSACTION_NOT_FOUND:   ({code: "transaction_not_found", message: "Transação não encontrada"}),
     ADDRESS_NOT_FOUND:       ({code: "address_not_found",     message: "Endereço não encontrado"}),
     INTERNAL_ERROR:          ({code: "internal_error",        message: "Erro interno ao processar requisição"}),
+    TICKET_NOT_FOUND:        ({code: "ticket_not_found",      message: "Ticket de suporte não encontrado"}),
+    INVALID_PARAMS:          ({code: "invalid_params",        message: "Parâmetros inválido"})
 }
 
 export default class CustomError{

@@ -26,6 +26,12 @@ enum TransferStatus{
   REFOUND
 }
 
+enum TicketStatus{
+  TODO
+  DOING
+  DONE
+}
+
 model User_info {
   id             String       @id @default(uuid()) @db.Uuid
   full_name      String       @db.VarChar(200)
@@ -101,14 +107,14 @@ model Transfer {
 }
 
 model Ticket{
-  id              String      @id @default(uuid()) @db.Uuid
-  user            User_info   @relation(fields: [user_info_id], references: [id])
-  user_info_id    String      @db.Uuid
-  title           String      @db.VarChar(50)
-  description     String      @db.Text
-  is_solved       Boolean     @db.Boolean
-  created_at      DateTime    @default(now()) @db.Timestamp()
-  updated_at      DateTime?   @db.Timestamp() @default(now())
+  id              String        @id @default(uuid()) @db.Uuid
+  user            User_info     @relation(fields: [user_info_id], references: [id])
+  user_info_id    String        @db.Uuid
+  title           String        @db.VarChar(50)
+  description     String        @db.Text
+  status          TicketStatus  
+  created_at      DateTime      @default(now()) @db.Timestamp()
+  updated_at      DateTime?     @db.Timestamp() @default(now())
   messages        Messages[]
 }
 
@@ -117,10 +123,10 @@ model Messages{
   message         String        @db.Text
   ticket          Ticket        @relation(fields: [ticket_id], references: [id])
   ticket_id       String        @db.Uuid
-  user            User_info     @relation(fields: [user_id], references: [id])
-  user_id         String        @db.Uuid
-  suport          Suport_info   @relation(fields: [suport_id], references: [id])
-  suport_id       String        @db.Uuid
+  user            User_info?     @relation(fields: [user_id], references: [id])
+  user_id         String?        @db.Uuid
+  suport          Suport_info?   @relation(fields: [suport_id], references: [id])
+  suport_id       String?        @db.Uuid
   created_at      DateTime      @default(now()) @db.Timestamp()
   updated_at      DateTime?     @db.Timestamp() @default(now())
 }
@@ -128,6 +134,7 @@ model Messages{
 model Suport_info{
   id          String      @id @default(uuid()) @db.Uuid
   name        String      @db.Text
+  email       String      @db.VarChar(100) @unique
   role        String      @db.VarChar(50)
   created_at  DateTime    @db.Timestamp() @default(now())
   updated_at  DateTime?   @db.Timestamp() @default(now())
@@ -139,8 +146,8 @@ model Suport_auth{
   id              String @id @default(uuid()) @db.Uuid
   suport          Suport_info @relation(fields: [suport_info_id], references: [id])
   suport_info_id  String @unique @db.Uuid
-  email           String @db.VarChar(100)
-  password        String @db.VarChar(50)
+  cpf             String @unique @db.VarChar(11)
+  password        String @db.Text
   created_at      DateTime @db.Timestamp() @default(now())
   updated_at      DateTime? @db.Timestamp() @default(now())
 }
