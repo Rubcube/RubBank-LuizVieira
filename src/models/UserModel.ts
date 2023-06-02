@@ -115,7 +115,7 @@ export default class UserModel {
       data:{
         title: title,
         description: description,
-        status: "TODO",
+        status: "INREVIEW",
         user_info_id: userId
       }
     });
@@ -182,6 +182,13 @@ export default class UserModel {
         ticket_id: ticketId,
         user_id: userId,
       }
+    })
+  }
+
+  getSuportName = async (suportId:string) => {
+    return await prisma.suport_info.findUnique({
+      where: {id: suportId},
+      select: {name: true}
     })
   }
 };

@@ -140,13 +140,13 @@ export const GetAccountParamsValidation = (req: Request, res: Response, next: Ne
 export const PutAddressValidation = (req: Request, res: Response, next: NextFunction) => {
 
   const address = z.object({
-    cep: z.string().trim().min(8, {message: ErrorsMessage.invalid_length.cep}).nullish(),
+    cep: z.string().trim().min(8, {message: ErrorsMessage.invalid_length.cep}),
     type: z.string().trim().nullish(),
-    street: z.string().trim().min(2, {message: ErrorsMessage.invalid_length.street}).nullish(),
-    number: z.string().trim().nullish(),
+    street: z.string().trim().min(2, {message: ErrorsMessage.invalid_length.street}),
+    number: z.string().trim(),
     complement: z.string().trim().nullish(),
-    city: z.string().trim().nullish(),
-    state: z.string().trim().length(2, {message: ErrorsMessage.invalid_length.state}).nullish()
+    city: z.string().trim(),
+    state: z.string().trim().length(2, {message: ErrorsMessage.invalid_length.state})
   }).safeParse({...req.body}, {
     errorMap: (issue, _ctx) => {
       if(issue.message){return {message: issue.message}};
@@ -165,7 +165,7 @@ export const PutAddressValidation = (req: Request, res: Response, next: NextFunc
 }
 
 export const PutUserValidation = (req: Request, res: Response, next: NextFunction) => {
-
+  if(req.body.birth) req.body.birth = DateTime.fromISO(req.body.birth).toJSDate();
   const user = z.object({
     full_name: z.string().trim().regex(regex.fullName, ErrorsMessage.invalid_string.default).nullish(),
     phone: z.string().trim().min(11, {message: ErrorsMessage.invalid_length.phone}).regex(regex.phone).nullish(),

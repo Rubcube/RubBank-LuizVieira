@@ -20,7 +20,7 @@ export default class AddressModel {
     })
   }
 
-  update =async (data: AddressUpdate, addressId: string) => {
+  update = async (data: AddressUpdate, addressId: string) => {
     return await prisma.address.update({
       where: { id: addressId},
       data: {

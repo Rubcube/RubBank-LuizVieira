@@ -10,6 +10,7 @@ import { messageOut, messages } from "dtos/MessageDTO";
 import  jwt from "jsonwebtoken";
 import UserModel from "models/UserModel";
 import AccountModel from "models/AccountModel";
+import { resExtrato, transfers } from "dtos/TransferDTO";
 
 const suportModel = new SuportModel();
 const userModel = new UserModel();
@@ -18,7 +19,7 @@ const accountModel = new AccountModel();
 export default class SuportController{
     create = async (req: Request, res: Response) => {
         try{
-
+            if(!await suportModel.verifyRole(res.locals.token.id, 'adm')) throw new CustomError(InternalErrors.ACCESS_DENIED);
             const suportInfo : SuportInfo = { 
               name: req.body.name,
               email: req.body.email,
@@ -32,9 +33,9 @@ export default class SuportController{
             const newSuport = await suportModel.create(suportInfo);
       
             res.status(201).json(newSuport);
-        }catch(err){
+        }catch(err: any){
             console.error(err);
-            res.status(500).json({error:[InternalErrors.INTERNAL_ERROR]});
+            res.status(500).json({error:[err.error]});
         }
     }
 
@@ -221,7 +222,8 @@ export default class SuportController{
         if(req.query.status
           && req.query.status !== TicketStatus.DOING 
           && req.query.status !== TicketStatus.DONE
-          && req.query.status !== TicketStatus.TODO) 
+          && req.query.status !== TicketStatus.TODO
+          && req.query.status !== TicketStatus.INREVIEW) 
           throw new CustomError(InternalErrors.INTERNAL_ERROR);
 
         if(!req.query.ticketId) throw new CustomError(InternalErrors.PARAMS_NOT_DEFINED)
@@ -235,13 +237,9 @@ export default class SuportController{
       }
     }
 
-    /*getExtrato = async (req: Request, res: Response) => {
+    getExtrato = async (req: Request, res: Response) => {
       try{
         if(!req.query.accountId) throw new CustomError(InternalErrors.PARAMS_NOT_DEFINED);
-        
-        const account: Account | null  = await accountModel.getAccountById(req.query.accountId as string);
-
-        if(account === null || res.locals.token.id !== account.user_id) throw new CustomError(InternalErrors.ACCESS_DENIED);
 
         const page = z.number().safeParse(req.query.page? parseInt(req.query.page as string): 1);
         if(!page.success) throw new CustomError(InternalErrors.INVALID_PARAMS)
@@ -275,6 +273,35 @@ export default class SuportController{
         return res.status(500).json({error:[err.error]})
       }
       
-    }*/
+    }
+
+    putPassword = async (req: Request, res: Response) => {
+      try{       
+          if(!await suportModel.verifyPassword(res.locals.token.id, req.body.oldPassword)) throw new CustomError(InternalErrors.BAD_CREDENTIALS)
+    
+          await suportModel.updateAuth(res.locals.token.id, req.body.newPassword)
+    
+          return res.status(200).send();
+      }catch(err: any){
+          console.error(err);
+          return res.status(500).json({error: [err.error]});
+      }
+    }
+
+    getSuports = async (req: Request, res: Response) => {
+      try{
+        if(!await suportModel.verifyRole(res.locals.token.id, 'adm')) throw new CustomError(InternalErrors.ACCESS_DENIED);
+
+        const status = req.query.status? req.query.status: undefined;
+        if((status) && (status !== "ACTIVE" && status !== "INACTIVE")) throw new CustomError(InternalErrors.INVALID_PARAMS);
+  
+        const suports = await suportModel.getSuports(status);
+  
+        res.status(201).json({suports: suports});
+    }catch(err: any){
+        console.error(err);
+        res.status(500).json({error:[err.error]});
+    }
+    }
 }
 

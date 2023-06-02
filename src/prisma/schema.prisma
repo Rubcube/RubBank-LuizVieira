@@ -27,6 +27,7 @@ enum TransferStatus{
 }
 
 enum TicketStatus{
+  INREVIEW
   TODO
   DOING
   DONE
@@ -112,7 +113,9 @@ model Ticket{
   user_info_id    String        @db.Uuid
   title           String        @db.VarChar(50)
   description     String        @db.Text
-  status          TicketStatus  
+  status          TicketStatus 
+  severity        Int           @db.Integer @default(0)
+  is_solved       Boolean       @db.Boolean @default(false)
   created_at      DateTime      @default(now()) @db.Timestamp()
   updated_at      DateTime?     @db.Timestamp() @default(now())
   messages        Messages[]
@@ -139,6 +142,7 @@ model Suport_info{
   created_at  DateTime    @db.Timestamp() @default(now())
   updated_at  DateTime?   @db.Timestamp() @default(now())
   messages    Messages[]
+  status      String      @db.Text @default("ACTIVE")
   suport_auth Suport_auth?
 }
 

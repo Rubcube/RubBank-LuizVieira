@@ -155,7 +155,14 @@ export default class UserController {
         throw new CustomError(InternalErrors.ADDRESS_NOT_FOUND);
 
       const dataUser: AddressUpdate = {
-        ...req.body
+        cep: req.body.cep? req.body.cep: undefined,
+        type: req.body.type? req.body.type: undefined,
+        street: req.body.street? req.body.street: undefined,
+        number: req.body.number? req.body.number: undefined,
+        complement: req.body.complement? req.body.complement: undefined,
+        neighborhood: req.body.neighborhood? req.body.neighborhood: undefined,
+        city: req.body.city? req.body.city: undefined,
+        state: req.body.state? req.body.state: undefined 
       }
       await addressModel.update(dataUser, req.params.id as string)
 
@@ -188,7 +195,8 @@ export default class UserController {
       if(req.query.status
         && req.query.status !== TicketStatus.DOING 
         && req.query.status !== TicketStatus.DONE
-        && req.query.status !== TicketStatus.TODO) 
+        && req.query.status !== TicketStatus.TODO
+        && req.query.status !== TicketStatus.INREVIEW) 
         throw new CustomError(InternalErrors.INTERNAL_ERROR);
 
       if(req.query.startDate){
@@ -238,29 +246,15 @@ export default class UserController {
       if(await userModel.getTicketById(res.locals.token.id, req.query.ticketId as string) === null) 
         throw new CustomError(InternalErrors.TICKET_NOT_FOUND);
 
-      await userModel.createMessage(res.locals.token.id, req.query.ticketId as string, req.body.message);
-      const result = await userModel.getMessages(req.query.ticketId as string, page.data);
+      const result = await userModel.createMessage(res.locals.token.id, req.query.ticketId as string, req.body.message);
 
-      let messages: Array<messageOut> = [];
-
-      result.forEach( (message) => {
-        messages.push({
-          message: message.message,
-          direction: message.user_id? "send": "received",
-          created_at: message.created_at
-        })
-      })
-
-
-      const resObject: messages = {
-        pagination:{
-          actualPage: page.data,
-          maxPerPage: take
-        },
-        messages: messages
-      };
-
-      return res.status(200).json(resObject);
+      return res.status(200).json({
+        data: {
+          message: result.message,
+          created_at: result.created_at,
+          direction: "send"
+        }
+        });
     }catch(err:any){
       console.error(err)
       return res.status(500).json({error: [err.error]})

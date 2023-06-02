@@ -129,4 +129,39 @@ export default class SuportModel {
         })
     }
 
+    verifyRole = async (suportId: string, role: string) => {
+        return await prisma.suport_info.findFirst({
+            where:{
+                id: suportId,
+                role: role
+            }
+        })
+    }
+
+    verifyPassword = async (suportId:string, password: string) => {
+        const user = await prisma.suport_auth.findUnique({
+            where: {suport_info_id: suportId}
+          })
+      
+        return user? await bcrypt.compare( password, user.password)? true: false: false;
+    }
+
+    updateAuth = async (suportId:string, password: string) => {
+        const salt = bcrypt.genSaltSync(10);
+        return await prisma.suport_auth.update({
+            where:{suport_info_id: suportId},
+            data:{
+                password: bcrypt.hashSync(password, salt),
+                updated_at: new Date()
+            }
+        })
+    }
+
+    getSuports = async (status?: string) => {
+        return await prisma.suport_info.findMany({
+            where: {
+                status: status
+            }
+        })
+    }
 };
